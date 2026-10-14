@@ -1,0 +1,33 @@
+flowchart TB
+    subgraph P1[准备]
+        direction LR
+        REQ[请求] --> CHECK[参数校验] --> TPL[取模板] --> MUSIC[取音乐元数据]
+    end
+    subgraph P2[决策]
+        direction LR
+        STYLE[决定剪辑风格] --> CUT{片段选择}
+        CUT -->|AI 高光| FIX[校正与剔除]
+        CUT -->|无 AI| EVEN[等分兜底]
+    end
+    subgraph P3[编排]
+        direction LR
+        TL[构建时间轴] --> TRANS[填转场] --> DECOR[叠加装饰] --> SPEED[变速] --> ALIGN[音乐对齐]
+    end
+    P1 --> P2 --> P3 --> OUT[输出工程描述]
+    style P1 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style P2 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style P3 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style REQ fill:#263238,stroke:#4c8dff,color:#ededf0
+    style CHECK fill:#263238,stroke:#4c8dff,color:#ededf0
+    style TPL fill:#263238,stroke:#4c8dff,color:#ededf0
+    style MUSIC fill:#263238,stroke:#4c8dff,color:#ededf0
+    style STYLE fill:#33281a,stroke:#ffb020,color:#ededf0
+    style CUT fill:#33281a,stroke:#ffb020,color:#ededf0
+    style FIX fill:#33281a,stroke:#ffb020,color:#ededf0
+    style EVEN fill:#33281a,stroke:#ffb020,color:#ededf0
+    style TL fill:#263238,stroke:#4c8dff,color:#ededf0
+    style TRANS fill:#263238,stroke:#4c8dff,color:#ededf0
+    style DECOR fill:#263238,stroke:#4c8dff,color:#ededf0
+    style SPEED fill:#263238,stroke:#4c8dff,color:#ededf0
+    style ALIGN fill:#263238,stroke:#4c8dff,color:#ededf0
+    style OUT fill:#1b3a2f,stroke:#00e599,color:#ededf0

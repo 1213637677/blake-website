@@ -1,0 +1,228 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntryMeta from '../../components/EntryMeta.astro';
+import CodeEnhance from '../../components/CodeEnhance.astro';
+import Cover from '../../components/Cover.astro';
+import Icon from '../../components/Icon.astro';
+import '../../styles/prose.css';
+import { getPosts, readingTime } from '../../lib/entries';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts.map((post, i) => ({
+    params: { slug: post.id },
+    props: { post, prev: posts[i + 1] ?? null, next: posts[i - 1] ?? null },
+  }));
+}
+
+const { post, prev, next } = Astro.props;
+const { Content } = await render(post);
+const minutes = readingTime(post.body ?? '');
+
+const KIND_LABEL: Record<string, string> = {
+  essay: '随笔',
+  learning: '学习',
+  retro: '复盘',
+};
+---
+
+<BaseLayout
+  title={post.data.title}
+  description={post.data.summary}
+  ogType="article"
+  image={post.data.cover}
+  width="narrow"
+>
+  <article class="container article">
+    <nav class="crumb" aria-label="面包屑">
+      <a href="/writing">写下来</a>
+      <span aria-hidden="true">/</span>
+      <span>{KIND_LABEL[post.data.kind] ?? '随笔'}</span>
+    </nav>
+
+    <h1 class="article__title">{post.data.title}</h1>
+    {post.data.summary && <p class="article__summary">{post.data.summary}</p>}
+
+    <EntryMeta
+      date={post.data.date}
+      updated={post.data.updated}
+      tags={post.data.tags}
+      minutes={minutes}
+      draft={post.data.draft}
+    />
+
+    {post.data.cover && <Cover seed={post.id} label={post.data.title} src={post.data.cover} ratio="wide" />}
+
+    <div class="prose article__body">
+      <Content />
+    </div>
+
+    <CodeEnhance />
+
+    <p class="back">
+      <a href="/writing">
+        <Icon name="arrowLeft" size={13} />
+        返回文章列表
+      </a>
+    </p>
+
+    <nav class="pager" aria-label="上下篇">
+      {
+        prev ? (
+          <a class="pager__item" href={`/writing/${prev.id}`} rel="prev">
+            <span class="meta"><Icon name="arrowLeft" size={14} /> 上一篇</span>
+            <span class="pager__title">{prev.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next ? (
+          <a class="pager__item pager__item--next" href={`/writing/${next.id}`} rel="next">
+            <span class="meta">下一篇 <Icon name="arrowRight" size={14} /></span>
+            <span class="pager__title">{next.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .article {
+    padding-block: var(--space-8) var(--space-9);
+  }
+
+  .crumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    margin-bottom: var(--space-5);
+  }
+
+  .crumb a {
+    color: var(--acc);
+  }
+
+  .article__title {
+    font-family: var(--font-sans);
+    font-size: var(--step-4);
+    font-weight: 600;
+    letter-spacing: -0.032em;
+    line-height: 1.08;
+  }
+
+  .article__summary {
+    margin-top: var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--step-1);
+    line-height: 1.55;
+    color: var(--fg-2);
+    max-width: 44ch;
+    text-wrap: pretty;
+  }
+
+  .article :global(.entry-meta) {
+    margin-top: var(--space-5);
+  }
+
+  .article :global(.cover) {
+    margin-top: var(--space-6);
+  }
+
+  .article__body {
+    margin-top: var(--space-7);
+    padding-top: var(--space-6);
+    border-top: 2px solid var(--fg);
+    max-width: var(--measure);
+  }
+
+  /* 明确的「下一动作」：留白 + hover 位移，不再是被忽略的尾行 */
+  .back {
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  .back a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 38px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+    color: var(--fg);
+    transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+
+  .back a:hover {
+    background: var(--surface-2);
+    border-color: var(--fg-3);
+  }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  .pager__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border: 1.5px solid var(--fg);
+    border-radius: var(--radius);
+    background: var(--bg);
+    min-width: 0;
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
+  }
+
+  .pager__item:hover {
+    transform: translateY(-2px);
+  }
+
+  .pager__item--next {
+    text-align: right;
+    align-items: flex-end;
+  }
+
+  .pager__item .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pager__title {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 650;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 640px) {
+    .pager {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pager__item--next {
+      text-align: left;
+      align-items: flex-start;
+    }
+  }
+</style>

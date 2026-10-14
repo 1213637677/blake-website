@@ -1,0 +1,14 @@
+flowchart TB
+    REQ[客户端请求] --> MW[中间件判断]
+    MW -->|在豁免名单| RAW[原样返回<br/>URL 不签名]
+    MW -->|不在豁免名单| VER{客户端版本<br/>满足门槛?}
+    VER -->|是 / 内部后台| SIGN[回包前替换 URL<br/>MD5+时间戳+路径]
+    VER -->|否 老客户端| RAW
+    SIGN --> CLIENT[客户端拿到签名地址]
+    RAW --> CLIENT
+    style REQ fill:#263238,stroke:#4c8dff,color:#ededf0
+    style MW fill:#33281a,stroke:#ffb020,color:#ededf0
+    style RAW fill:#263238,stroke:#4c8dff,color:#ededf0
+    style VER fill:#33281a,stroke:#ffb020,color:#ededf0
+    style SIGN fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style CLIENT fill:#263238,stroke:#4c8dff,color:#ededf0

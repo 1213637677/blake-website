@@ -1,0 +1,331 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import EntryMeta from '../../components/EntryMeta.astro';
+import CodeEnhance from '../../components/CodeEnhance.astro';
+import Cover from '../../components/Cover.astro';
+import Icon from '../../components/Icon.astro';
+import '../../styles/prose.css';
+import { getProjects } from '../../lib/entries';
+import { fmtDate } from '../../lib/format';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, prev: projects[i + 1] ?? null, next: projects[i - 1] ?? null },
+  }));
+}
+
+const { project, prev, next } = Astro.props;
+const { Content } = await render(project);
+
+const STATUS_LABEL: Record<string, string> = {
+  active: '进行中',
+  shipped: '已完成',
+  paused: '暂停',
+  archived: '归档',
+};
+
+const LINK_ICON: Record<string, string> = {
+  demo: 'arrowUpRight',
+  source: 'github',
+  post: 'link',
+};
+
+const specs = [
+  project.data.role && { label: '角色', value: project.data.role },
+  project.data.period && { label: '时间', value: project.data.period },
+  { label: '状态', value: STATUS_LABEL[project.data.status] ?? project.data.status },
+  { label: '类型', value: project.data.kind === 'work' ? '工作项目' : '个人项目' },
+].filter(Boolean) as { label: string; value: string }[];
+---
+
+<BaseLayout
+  title={project.data.title}
+  description={project.data.summary}
+  ogType="article"
+  image={project.data.cover}
+  width="narrow"
+>
+  <article class="container project">
+    <nav class="crumb" aria-label="面包屑">
+      <a href="/projects">做过的事</a>
+      <span aria-hidden="true">/</span>
+      <span>{project.data.kind === 'work' ? '工作项目' : '个人项目'}</span>
+    </nav>
+
+    <h1 class="project__title">{project.data.title}</h1>
+    {project.data.summary && <p class="project__summary">{project.data.summary}</p>}
+
+    <Cover seed={project.id} label={project.data.title} src={project.data.cover} ratio="wide" />
+
+    <dl class="specs">
+      {
+        specs.map((s) => (
+          <div class="specs__row">
+            <dt class="meta">{s.label}</dt>
+            <dd>{s.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+
+    {
+      project.data.stack.length > 0 && (
+        <section class="block">
+          <p class="block__title eyebrow">技术栈</p>
+          <ul class="tag-list">
+            {project.data.stack.map((s) => (
+              <li><span class="tag">{s}</span></li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    <section class="block">
+      <p class="block__title eyebrow">链接</p>
+      {
+        project.data.links.length > 0 ? (
+          <ul class="links">
+            {project.data.links.map((l) => (
+              <li>
+                <a class="btn" href={l.href} rel="noopener noreferrer" target="_blank">
+                  <Icon name={LINK_ICON[l.kind] ?? 'link'} size={15} />
+                  {l.label}
+                  <Icon name="arrowUpRight" size={13} />
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="block__empty">演示与源码链接待补充。在 frontmatter 的 <code>links</code> 里加。</p>
+        )
+      }
+    </section>
+
+    <div class="prose project__body">
+      <Content />
+    </div>
+
+    <CodeEnhance />
+
+    <EntryMeta
+      date={project.data.date}
+      updated={project.data.updated}
+      tags={project.data.tags}
+      draft={project.data.draft}
+    />
+
+    <p class="back">
+      <a href="/projects">
+        <Icon name="arrowLeft" size={13} />
+        返回项目列表
+      </a>
+    </p>
+
+    <nav class="pager" aria-label="上一个 / 下一个项目">
+      {
+        prev ? (
+          <a class="pager__item" href={`/projects/${prev.id}`} rel="prev">
+            <span class="meta"><Icon name="arrowLeft" size={14} /> 上一个</span>
+            <span class="pager__title">{prev.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+      {
+        next ? (
+          <a class="pager__item pager__item--next" href={`/projects/${next.id}`} rel="next">
+            <span class="meta">下一个 <Icon name="arrowRight" size={14} /></span>
+            <span class="pager__title">{next.data.title}</span>
+          </a>
+        ) : (
+          <span />
+        )
+      }
+    </nav>
+  </article>
+</BaseLayout>
+
+<style>
+  .project {
+    padding-block: var(--space-8) var(--space-9);
+  }
+
+  .crumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    margin-bottom: var(--space-5);
+  }
+
+  .crumb a {
+    color: var(--acc);
+  }
+
+  .project__title {
+    font-family: var(--font-sans);
+    font-size: var(--step-4);
+    font-weight: 600;
+    letter-spacing: -0.032em;
+    line-height: 1.08;
+  }
+
+  .project__summary {
+    margin-top: var(--space-4);
+    font-family: var(--font-sans);
+    font-size: var(--step-1);
+    line-height: 1.55;
+    color: var(--fg-2);
+    max-width: 44ch;
+    text-wrap: pretty;
+  }
+
+  .project :global(.cover) {
+    margin-top: var(--space-6);
+  }
+
+  .specs {
+    margin: var(--space-6) 0 0;
+    border-top: 2px solid var(--fg);
+  }
+
+  .specs__row {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-block: var(--space-3);
+    border-bottom: 1px dashed var(--line);
+    align-items: baseline;
+  }
+
+  .specs__row dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    overflow-wrap: anywhere;
+  }
+
+  .block {
+    margin-top: var(--space-6);
+  }
+
+  .block__title {
+    margin-bottom: var(--space-3);
+  }
+
+  .block__empty {
+    font-size: 0.9375rem;
+    color: var(--fg-3);
+    overflow-wrap: anywhere;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    list-style: none;
+  }
+
+  .project__body {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 2px solid var(--fg);
+    max-width: var(--measure);
+  }
+
+  /* 明确的「下一动作」：留白 + hover 位移，不再是被忽略的尾行 */
+  .back {
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  .back a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 38px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    font-size: 0.8125rem;
+    color: var(--fg);
+    transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+
+  .back a:hover {
+    background: var(--surface-2);
+    border-color: var(--fg-3);
+  }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-top: var(--space-8);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--line);
+  }
+
+  .pager__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border: 1.5px solid var(--fg);
+    border-radius: var(--radius);
+    background: var(--bg);
+    min-width: 0;
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
+  }
+
+  .pager__item:hover {
+    transform: translateY(-2px);
+  }
+
+  .pager__item--next {
+    text-align: right;
+    align-items: flex-end;
+  }
+
+  .pager__item .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pager__title {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 650;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  code {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 640px) {
+    .pager {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pager__item--next {
+      text-align: left;
+      align-items: flex-start;
+    }
+  }
+</style>

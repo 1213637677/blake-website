@@ -1,0 +1,204 @@
+---
+import { nav, site } from '../config';
+import Icon from './Icon.astro';
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+
+function active(href: string) {
+  if (href === '/') return path === '/';
+  return path === href || path.startsWith(href + '/');
+}
+---
+
+<header class="header">
+  <div class="container header__inner">
+    <a class="brand" href="/">
+      <span class="brand__name">{site.name}</span>
+    </a>
+
+    <nav class="nav" aria-label="主导航">
+      {
+        nav.map((item) => (
+          <a class:list={['nav__link', { 'is-active': active(item.href) }]} href={item.href}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="header__actions">
+      <button class="icon-btn" type="button" data-cmd-open aria-label="打开命令面板" data-tip="⌘K">
+        <Icon name="search" />
+      </button>
+      <button class="icon-btn theme-toggle" type="button" aria-label="切换日间模式" data-tip="theme">
+        <Icon name="sun" class="i-sun" />
+        <Icon name="moon" class="i-moon" />
+      </button>
+    </div>
+  </div>
+</header>
+
+<script is:inline>
+  // 深色为默认；只有显式选过 light 才切到日间
+  (() => {
+    const stored = localStorage.getItem('theme');
+    const light = stored
+      ? stored === 'light'
+      : false;
+    if (light) document.documentElement.dataset.theme = 'light';
+  })();
+</script>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>('.theme-toggle');
+  const syncLabel = () => {
+    if (!btn) return;
+    const isLight = document.documentElement.dataset.theme === 'light';
+    btn.setAttribute('aria-label', isLight ? '切换到深色模式' : '切换到日间模式');
+  };
+  btn?.addEventListener('click', () => {
+    const root = document.documentElement;
+    const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    if (next === 'light') root.dataset.theme = 'light';
+    else delete root.dataset.theme;
+    localStorage.setItem('theme', next);
+    syncLabel();
+    window.dispatchEvent(new CustomEvent('blake:theme'));
+  });
+  syncLabel();
+</script>
+
+<style>
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  @supports not (backdrop-filter: blur(10px)) {
+    .header {
+      background: var(--bg);
+    }
+  }
+
+  .header__inner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+    height: var(--nav-h);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    margin-left: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  .nav__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8125rem;
+    color: var(--fg-2);
+    padding: 4px 0;
+    white-space: nowrap;
+    transition: color 0.15s ease;
+    position: relative;
+  }
+
+  .nav__slash {
+    color: var(--line-2);
+    transition: color 0.15s ease;
+  }
+
+  .nav__link:hover {
+    color: var(--acc);
+  }
+
+  .nav__link:hover .nav__slash {
+    color: var(--acc);
+  }
+
+  .nav__link.is-active {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  .nav__link.is-active .nav__slash {
+    color: var(--acc);
+  }
+
+  .nav__link.is-active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background: var(--acc);
+    box-shadow: none;
+  }
+
+  .header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 0 0 auto;
+  }
+
+  @media (max-width: 860px) {
+    .header__inner {
+      gap: var(--space-4);
+      height: 54px;
+    }
+
+    .nav {
+      gap: var(--space-4);
+      overflow: hidden;
+    }
+    .nav__link {
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .brand {
+      font-size: 0.875rem;
+    }
+
+    .nav {
+      gap: var(--space-3);
+    }
+
+    .nav__link {
+      font-size: 0.6875rem;
+    }
+
+    .header__actions .icon-btn {
+      width: 32px;
+      height: 32px;
+    }
+
+    .header__actions .icon-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
+</style>

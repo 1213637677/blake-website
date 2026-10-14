@@ -1,0 +1,362 @@
+---
+/**
+ * 极简动态层：只保留有意义的三件事 ——
+ * 滚动揭示、滚动进度、命令面板（⌘K）。
+ * 无循环动画、无拟物装饰，尊重 prefers-reduced-motion。
+ */
+---
+
+<div class="scrollbar" aria-hidden="true"><span class="scrollbar__fill"></span></div>
+
+<button class="cmd-fab" type="button" data-cmd-open aria-label="打开命令面板">
+  <span aria-hidden="true">⌘</span>K
+</button>
+
+<div class="cmd" data-cmd hidden>
+  <div class="cmd__panel" role="dialog" aria-modal="true" aria-label="命令面板">
+    <div class="cmd__head">
+      <input
+        class="cmd__input"
+        type="text"
+        placeholder="搜索内容与页面…"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="搜索"
+      />
+      <kbd class="cmd__esc">ESC</kbd>
+    </div>
+    <ul class="cmd__list" data-cmd-list></ul>
+  </div>
+</div>
+
+<script>
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- 滚动揭示 ---------- */
+  const reveals = document.querySelectorAll<HTMLElement>('.reveal');
+  if (reduced) {
+    reveals.forEach((el) => el.classList.add('is-in'));
+  } else if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-in');
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      { rootMargin: '0px 0px -5% 0px', threshold: 0.05 },
+    );
+    reveals.forEach((el, i) => {
+      el.style.transitionDelay = `${Math.min(i, 8) * 35}ms`;
+      io.observe(el);
+    });
+  } else {
+    reveals.forEach((el) => el.classList.add('is-in'));
+  }
+
+  /* ---------- 滚动进度 ---------- */
+  const fill = document.querySelector<HTMLElement>('.scrollbar__fill');
+  if (fill) {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      const p = h > 0 ? window.scrollY / h : 0;
+      fill.style.transform = `scaleX(${Math.min(1, Math.max(0, p))})`;
+    };
+    window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+    update();
+  }
+
+  /* ---------- 命令面板 ⌘K ---------- */
+  const cmdRoot = document.querySelector<HTMLElement>('[data-cmd]');
+  const cmdInput = cmdRoot?.querySelector<HTMLInputElement>('.cmd__input');
+  const cmdList = cmdRoot?.querySelector<HTMLUListElement>('[data-cmd-list]');
+
+  type Doc = { title: string; href: string; kind: string; date: string; tags: string[] };
+  let docs: Doc[] = [];
+  let idxLoaded = false;
+
+  async function loadIndex() {
+    if (idxLoaded) return;
+    try {
+      const res = await fetch('/search-index.json');
+      const json = await res.json();
+      docs = (json.docs ?? []).map((d: Doc) => ({
+        title: d.title,
+        href: d.href,
+        kind: d.kind,
+        date: d.date,
+        tags: d.tags ?? [],
+      }));
+      idxLoaded = true;
+    } catch {
+      docs = [];
+    }
+  }
+
+  const STATIC = [
+    { title: '首页', href: '/', tag: '页面' },
+    { title: '项目', href: '/projects', tag: '页面' },
+    { title: '文章', href: '/writing', tag: '页面' },
+    { title: '笔记', href: '/notes', tag: '页面' },
+    { title: '标签', href: '/tags', tag: '页面' },
+    { title: '搜索', href: '/search', tag: '页面' },
+    { title: '关于', href: '/about', tag: '页面' },
+  ];
+
+  const esc = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+  const KIND_LABEL: Record<string, string> = { post: '文章', project: '项目', note: '笔记' };
+
+  function renderCmd(q: string) {
+    if (!cmdList) return;
+    const query = q.trim().toLowerCase();
+
+    const staticHits = STATIC.filter((s) => !query || s.title.toLowerCase().includes(query));
+    // 两条分支统一返回 { d, score }，否则空查询时取值会炸
+    const docHits: { d: Doc; score: number }[] = query
+      ? docs
+          .map((d) => {
+            const inTitle = d.title.toLowerCase().includes(query);
+            const inTag = d.tags.some((t) => t.toLowerCase().includes(query));
+            if (!inTitle && !inTag) return null;
+            return { d, score: (inTitle ? 10 : 0) + (inTag ? 4 : 0) };
+          })
+          .filter((x): x is { d: Doc; score: number } => x !== null)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 8)
+      : docs.slice(0, 6).map((d) => ({ d, score: 0 }));
+
+    cmdList.innerHTML =
+      [
+        ...staticHits.map(
+          (s) => `<li><a href="${s.href}" data-cmd-item><span class="cmd__tag">${s.tag}</span><span class="cmd__label">${esc(s.title)}</span></a></li>`,
+        ),
+        ...docHits.map(
+          (x) =>
+            `<li><a href="${esc(x.d.href)}" data-cmd-item><span class="cmd__tag">${KIND_LABEL[x.d.kind] ?? x.d.kind}</span><span class="cmd__label">${esc(x.d.title)}</span></a></li>`,
+        ),
+      ].join('') || '<li class="cmd__empty">没有匹配项</li>';
+
+    // 渲染后同步高亮，否则首次按 ↓ 会跳过首项
+    const items = Array.from(cmdList.querySelectorAll<HTMLAnchorElement>('[data-cmd-item]'));
+    items.forEach((el, i) => el.classList.toggle('is-active', i === activeIdx));
+  }
+
+  let activeIdx = 0;
+  const move = (dir: number) => {
+    if (!cmdList) return;
+    const items = Array.from(cmdList.querySelectorAll<HTMLAnchorElement>('[data-cmd-item]'));
+    if (!items.length) return;
+    activeIdx = (activeIdx + dir + items.length) % items.length;
+    items.forEach((el, i) => el.classList.toggle('is-active', i === activeIdx));
+    items[activeIdx]?.scrollIntoView({ block: 'nearest' });
+  };
+
+  const openCmd = async () => {
+    if (!cmdRoot) return;
+    cmdRoot.hidden = false;
+    cmdInput?.focus();
+    activeIdx = 0;
+    await loadIndex();
+    renderCmd(cmdInput?.value ?? '');
+  };
+
+  const closeCmd = () => {
+    if (!cmdRoot) return;
+    cmdRoot.hidden = true;
+    if (cmdInput) cmdInput.value = '';
+  };
+
+  document.querySelectorAll('[data-cmd-open]').forEach((el) => el.addEventListener('click', openCmd));
+  cmdRoot?.addEventListener('click', (e) => {
+    if (e.target === cmdRoot) closeCmd();
+  });
+  cmdInput?.addEventListener('input', () => {
+    activeIdx = 0;
+    renderCmd(cmdInput.value);
+  });
+  cmdInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    if (e.key === 'Enter') {
+      const items = Array.from(cmdList?.querySelectorAll<HTMLAnchorElement>('[data-cmd-item]') ?? []);
+      const target = items[activeIdx];
+      if (target) window.location.href = target.getAttribute('href') ?? '/';
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (cmdRoot && !cmdRoot.hidden) closeCmd();
+      else openCmd();
+      return;
+    }
+    if (e.key === 'Escape' && cmdRoot && !cmdRoot.hidden) closeCmd();
+  });
+
+  loadIndex();
+</script>
+
+<style>
+  .scrollbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  .scrollbar__fill {
+    display: block;
+    height: 100%;
+    background: var(--acc);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+  }
+
+  /* 命令面板入口：低调 */
+  .cmd-fab {
+    position: fixed;
+    right: var(--space-5);
+    bottom: var(--space-5);
+    z-index: 70;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 32px;
+    padding: 0 var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--fg-3);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    cursor: pointer;
+    transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+
+  .cmd-fab:hover {
+    color: var(--fg);
+    border-color: var(--fg-3);
+  }
+
+  .cmd {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 14vh;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  html[data-theme='light'] .cmd {
+    background: rgba(10, 10, 11, 0.28);
+  }
+
+  .cmd[hidden] {
+    display: none;
+  }
+
+  .cmd__panel {
+    width: min(560px, calc(100% - 32px));
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+  }
+
+  .cmd__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .cmd__input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: none;
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+  }
+
+  .cmd__head:focus-within {
+    background: var(--surface-2);
+  }
+
+  .cmd__esc {
+    font-family: var(--font-sans);
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 2px 5px;
+    color: var(--fg-3);
+  }
+
+  .cmd__list {
+    max-height: 44vh;
+    overflow-y: auto;
+    list-style: none;
+    padding: var(--space-2);
+  }
+
+  .cmd__list a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-radius: 3px;
+    font-size: 0.8125rem;
+  }
+
+  .cmd__list a.is-active,
+  .cmd__list a:hover {
+    background: var(--surface-2);
+  }
+
+  .cmd__tag {
+    font-family: var(--font-sans);
+    font-size: 0.5625rem;
+    letter-spacing: 0.06em;
+    color: var(--fg-3);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1px 5px;
+    flex: 0 0 auto;
+  }
+
+  .cmd__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cmd__empty {
+    padding: var(--space-5);
+    color: var(--fg-3);
+    font-size: 0.8125rem;
+    text-align: center;
+  }
+
+  @media (max-width: 720px) {
+    .cmd-fab {
+      right: var(--space-4);
+      bottom: var(--space-4);
+    }
+  }
+</style>

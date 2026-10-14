@@ -1,0 +1,286 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import Icon from '../../components/Icon.astro';
+import { verifySession, adminEnabled } from '../../lib/auth';
+import { ADMIN_COOKIE } from '../../config';
+import { listEntries } from '../../lib/store';
+
+export const prerender = false;
+
+const authed = verifySession(Astro.cookies.get(ADMIN_COOKIE)?.value);
+if (!authed) return Astro.redirect('/admin/login');
+
+const entries = await listEntries();
+
+function dateOf(data: Record<string, unknown>): string {
+  const raw = data.date;
+  const d = raw instanceof Date ? raw : new Date(String(raw ?? ''));
+  return Number.isNaN(d.valueOf()) ? '—' : d.toISOString().slice(0, 10);
+}
+
+const COLLECTION_LABEL: Record<string, string> = {
+  posts: '文章',
+  projects: '项目',
+  notes: '笔记',
+};
+
+const HREF: Record<string, string> = {
+  posts: '/writing/',
+  projects: '/projects/',
+  notes: '/notes#',
+};
+
+const error = Astro.url.searchParams.get('error');
+---
+
+<AdminLayout>
+  <div class="head">
+    <div>
+      <p class="eyebrow">Entries</p>
+      <h1 class="title">全部条目</h1>
+    </div>
+    <a class="btn btn--primary" href="/admin/new">
+      <Icon name="plus" size={16} />
+      新建
+    </a>
+  </div>
+
+  <p class="hint">
+    条目就是 <code>content/</code> 下的 Markdown 文件。保存后需要 <code>npm run build</code> 才会出现在公开站点上（开发模式下自动生效）。
+  </p>
+
+  {
+    error && (
+      <p class="alert" role="alert">
+        {error}
+      </p>
+    )
+  }
+
+  {
+    entries.length === 0 ? (
+      <div class="empty">
+        <p class="empty__title">还没有条目</p>
+        <p>点右上角新建一篇。</p>
+      </div>
+    ) : (
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th>标题</th>
+              <th>日期</th>
+              <th>状态</th>
+              <th class="ta-r">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              entries.map((e) => (
+                <tr>
+                  <td>
+                    <span class="kind">{COLLECTION_LABEL[e.collection]}</span>
+                  </td>
+                  <td class="cell-title">
+                    <a href={`/admin/edit?c=${e.collection}&s=${e.slug}`}>
+                      {String(e.data.title ?? e.slug)}
+                    </a>
+                    <span class="slug meta">{e.slug}.md</span>
+                  </td>
+                  <td class="meta">{dateOf(e.data)}</td>
+                  <td>
+                    {e.data.draft ? <span class="draft">草稿</span> : <span class="live">已发布</span>}
+                  </td>
+                  <td>
+                    <div class="ops">
+                      <a
+                        class="icon-btn"
+                        href={`${HREF[e.collection]}${e.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="查看"
+                        data-tip="查看"
+                      >
+                        <Icon name="eye" />
+                      </a>
+                      <a
+                        class="icon-btn"
+                        href={`/admin/edit?c=${e.collection}&s=${e.slug}`}
+                        aria-label="编辑"
+                        data-tip="编辑"
+                      >
+                        <Icon name="edit" />
+                      </a>
+                      <form
+                        method="post"
+                        action="/admin/delete"
+                        onsubmit="return confirm('确认删除这个条目？此操作不可撤销。')"
+                      >
+                        <input type="hidden" name="collection" value={e.collection} />
+                        <input type="hidden" name="slug" value={e.slug} />
+                        <button class="icon-btn" type="submit" aria-label="删除" data-tip="删除">
+                          <Icon name="trash" />
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+</AdminLayout>
+
+<style>
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-3);
+  }
+
+  .title {
+    font-family: var(--font-serif);
+    font-size: var(--step-3);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-top: var(--space-3);
+  }
+
+  .hint {
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    margin-bottom: var(--space-5);
+    overflow-wrap: anywhere;
+  }
+
+  .alert {
+    border: 1px solid var(--signal);
+    background: var(--signal-soft);
+    color: var(--signal);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-5);
+    font-size: 0.9375rem;
+  }
+
+  .table-wrap {
+    border: 1.5px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+    overflow-x: auto;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    min-width: 620px;
+  }
+
+  .table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--step--1);
+    font-family: var(--font-sans);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .table td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--rule);
+    vertical-align: middle;
+  }
+
+  .table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .table tbody tr:hover {
+    background: var(--paper-3);
+  }
+
+  .ta-r {
+    text-align: right;
+  }
+
+  .kind {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .cell-title a {
+    color: var(--ink);
+    font-weight: 560;
+  }
+
+  .cell-title .slug {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--ink-3);
+    text-transform: none;
+    margin-top: 2px;
+  }
+
+  .draft {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    color: var(--signal);
+    background: var(--signal-soft);
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+
+  .live {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+
+  .ops {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+  }
+
+  .ops .icon-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .ops form {
+    display: flex;
+  }
+
+  code {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--paper-3);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 640px) {
+    .ops .icon-btn {
+      width: 40px;
+      height: 40px;
+    }
+  }
+</style>

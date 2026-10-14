@@ -1,0 +1,76 @@
+---
+import Icon from './Icon.astro';
+import { fmtDate, tagHref } from '../lib/format';
+
+interface Props {
+  date: Date;
+  updated?: Date;
+  tags: string[];
+  minutes?: number;
+  extra?: string;
+  draft?: boolean;
+}
+
+const { date, updated, tags, minutes, extra, draft } = Astro.props;
+---
+
+<div class="entry-meta">
+  <time datetime={date.toISOString()}>{fmtDate(date)}</time>
+  {updated && <span>更新 {fmtDate(updated)}</span>}
+  {minutes && <span>{minutes} min</span>}
+  {extra && <span>{extra}</span>}
+  {draft && <span class="draft">草稿</span>}
+  {
+    tags.length > 0 && (
+      <span class="entry-meta__tags">
+        {tags.map((t) => (
+          <a class="tag" href={tagHref(t)}>#{t}</a>
+        ))}
+      </span>
+    )
+  }
+</div>
+
+<style>
+  .entry-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+  }
+
+  .entry-meta > span + span::before {
+    content: '/';
+    opacity: 0.4;
+    margin-right: var(--space-3);
+  }
+
+  .draft {
+    background: var(--g-note);
+    color: #1a1a18;
+    padding: 2px 7px;
+  }
+
+  .draft::before {
+    content: none !important;
+  }
+
+  .entry-meta__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .entry-meta__tags::before {
+    content: none !important;
+  }
+
+  .entry-meta__tags .tag {
+    font-size: 0.625rem;
+  }
+</style>

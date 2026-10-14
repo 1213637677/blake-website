@@ -1,0 +1,121 @@
+---
+import { site } from '../config';
+import Icon from './Icon.astro';
+
+const year = new Date().getUTCFullYear();
+
+const links = [
+  { label: 'RSS', href: '/feed.xml', icon: 'rss' },
+  ...(site.repo ? [{ label: '源码', href: site.repo, icon: 'github' }] : []),
+  ...(site.email ? [{ label: '邮件', href: `mailto:${site.email}`, icon: 'mail' }] : []),
+];
+---
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__col footer__col--wide">
+        <p class="eyebrow eyebrow--dim">system</p>
+        <p class="footer__text">
+          Markdown 写作 · Git 存储 · 静态构建。<br />
+          无追踪，无第三方字体，无评论系统。
+        </p>
+
+      </div>
+
+      <div class="footer__col">
+        <p class="eyebrow eyebrow--dim">connect</p>
+        <ul class="footer__links">
+          {
+            links.map((l) => (
+              <li>
+                <a href={l.href} rel="noopener noreferrer" target={l.href.startsWith('http') ? '_blank' : undefined}>
+                  <Icon name={l.icon} size={13} />
+                  <span>{l.label}</span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+
+      <div class="footer__col">
+        <p class="eyebrow eyebrow--dim">index</p>
+        <ul class="footer__links">
+          <li><a href="/tags">标签</a></li>
+          <li><a href="/search">搜索</a></li>
+          <li><a href="/admin">后台</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <span class="meta">© {year} {site.name}</span>
+      <span class="meta">built with astro</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--line);
+    padding-block: var(--space-7) var(--space-5);
+    background: var(--surface);
+    position: relative;
+    z-index: 1;
+  }
+
+  .footer__grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: var(--space-7);
+    padding-bottom: var(--space-6);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .footer__text {
+    margin-top: var(--space-3);
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: var(--fg-2);
+  }
+
+  .footer__links {
+    margin-top: var(--space-3);
+    list-style: none;
+  }
+
+  .footer__links li + li {
+    margin-top: var(--space-2);
+  }
+
+  .footer__links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--fg-2);
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+
+  .footer__links a:hover {
+    color: var(--acc);
+    transform: translateX(2px);
+  }
+
+  .footer__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    padding-top: var(--space-4);
+  }
+
+  @media (max-width: 720px) {
+    .footer__grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-5);
+    }
+  }
+</style>

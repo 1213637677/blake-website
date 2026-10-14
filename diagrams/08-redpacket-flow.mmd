@@ -1,0 +1,20 @@
+flowchart TB
+    subgraph G[生成]
+        direction LR
+        REQ[请求] --> CFG[读配置] --> EDIT[内存改压缩包] --> PACK[重新打包]
+    end
+    subgraph U[上传与同步]
+        direction LR
+        UPLOAD[上传 CDN] --> DB[(落本地库)] --> SYNC[同步微信模板库]
+    end
+    G --> U --> DONE[完成]
+    style G fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style U fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style REQ fill:#263238,stroke:#4c8dff,color:#ededf0
+    style CFG fill:#263238,stroke:#4c8dff,color:#ededf0
+    style EDIT fill:#33281a,stroke:#ffb020,color:#ededf0
+    style PACK fill:#33281a,stroke:#ffb020,color:#ededf0
+    style UPLOAD fill:#263238,stroke:#4c8dff,color:#ededf0
+    style DB fill:#263238,stroke:#4c8dff,color:#ededf0
+    style SYNC fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style DONE fill:#1b3a2f,stroke:#00e599,color:#ededf0

@@ -1,0 +1,124 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { adminEnabled } from '../../lib/auth';
+
+export const prerender = false;
+
+const error = Astro.url.searchParams.get('error');
+---
+
+<AdminLayout>
+  <div class="wrap">
+    <div class="card">
+      <p class="eyebrow">Sign in</p>
+      <h1 class="title">登录后台</h1>
+      <p class="desc">使用环境变量 <code>ADMIN_PASSWORD</code> 中设置的口令。</p>
+
+      {
+        !adminEnabled() ? (
+          <p class="alert">
+            未设置 <code>ADMIN_PASSWORD</code>，后台不可用。
+          </p>
+        ) : (
+          <form method="post" action="/admin/session" class="form">
+            <label class="field">
+              <span class="field__label">口令</span>
+              <input class="input" type="password" name="password" autocomplete="current-password" required autofocus />
+            </label>
+            {error && <p class="error" role="alert">口令不正确</p>}
+            <button class="btn btn--primary" type="submit">登录</button>
+          </form>
+        )
+      }
+    </div>
+  </div>
+</AdminLayout>
+
+<style>
+  .wrap {
+    display: flex;
+    justify-content: center;
+    padding-top: var(--space-7);
+  }
+
+  .card {
+    width: 100%;
+    max-width: 420px;
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+    padding: var(--space-6);
+  }
+
+  .title {
+    font-family: var(--font-serif);
+    font-size: var(--step-2);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-block: var(--space-4) var(--space-2);
+  }
+
+  .desc {
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    margin-bottom: var(--space-5);
+  }
+
+  .alert {
+    border: 1px solid var(--signal);
+    background: var(--signal-soft);
+    color: var(--signal);
+    border-radius: var(--radius);
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.9375rem;
+  }
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .field__label {
+    font-family: var(--font-sans);
+    font-size: var(--step--1);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .input {
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .error {
+    color: var(--signal);
+    font-size: 0.9375rem;
+  }
+
+  code {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--paper-3);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+</style>

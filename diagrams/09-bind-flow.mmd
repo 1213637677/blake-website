@@ -1,0 +1,12 @@
+flowchart TB
+    SUB[创作者提交视频<br/>只能给出本地文件指纹] --> Q1[第一层 延迟队列<br/>5 分钟重试 最多 24 次]
+    Q1 -->|查到| OK[绑定成功<br/>进入审核]
+    Q1 -->|重试耗尽| Q2[第二层 定时扫描补偿]
+    Q2 -->|查到| OK
+    Q2 -->|仍未绑上| Q3[第三层 后台人工绑定]
+    Q3 --> OK
+    style SUB fill:#263238,stroke:#4c8dff,color:#ededf0
+    style Q1 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style Q2 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style Q3 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style OK fill:#1b3a2f,stroke:#00e599,color:#ededf0

@@ -1,0 +1,199 @@
+---
+import '../styles/global.css';
+import { adminEnabled, verifySession } from '../lib/auth';
+import { ADMIN_COOKIE } from '../config';
+import Icon from '../components/Icon.astro';
+
+const cookie = Astro.cookies.get(ADMIN_COOKIE)?.value;
+const authed = verifySession(cookie);
+const enabled = adminEnabled();
+const path = Astro.url.pathname;
+
+const links = [
+  { href: '/admin', label: '条目' },
+  { href: '/admin/new', label: '新建' },
+  { href: '/admin/uploads', label: '图片' },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>后台 · Blake</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="bar">
+      <div class="bar__inner">
+        <a class="bar__brand" href="/admin">
+          <Icon name="terminal" size={15} />
+          后台
+        </a>
+        {
+          authed && (
+            <nav class="bar__nav">
+              {links.map((l) => (
+                <a class:list={['bar__link', { 'is-active': path === l.href }]} href={l.href}>
+                  {l.label}
+                </a>
+              ))}
+            </nav>
+          )
+        }
+        <div class="bar__right">
+          <a class="bar__link" href="/" target="_blank" rel="noopener noreferrer">看站点 ↗</a>
+          {
+            authed && (
+              <form method="post" action="/admin/logout">
+                <button class="icon-btn" type="submit" aria-label="退出登录" data-tip="退出">
+                  <Icon name="logout" />
+                </button>
+              </form>
+            )
+          }
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      {
+        !enabled ? (
+          <div class="notice">
+            <h1>后台未启用</h1>
+            <p>
+              设置环境变量 <code>ADMIN_PASSWORD</code> 后重启即可使用（本地：<code>ADMIN_PASSWORD=xxx npm run dev</code>）。
+              未设置时后台完全关闭，静态站点不受影响。
+            </p>
+          </div>
+        ) : (
+          <slot />
+        )
+      }
+    </main>
+  </body>
+</html>
+
+<style>
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bar {
+    border-bottom: 2px solid var(--ink);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .bar__inner {
+    max-width: var(--container);
+    margin-inline: auto;
+    padding: 0 var(--space-6);
+    height: 58px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+  }
+
+  .bar__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .bar__nav {
+    display: flex;
+    gap: var(--space-4);
+  }
+
+  .bar__nav .bar__link {
+    font-size: 0.9375rem;
+  }
+
+  .bar__link {
+    color: var(--ink-2);
+    font-size: 0.875rem;
+    padding: 3px 0;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+  }
+
+  .bar__link:hover {
+    color: var(--ink);
+  }
+
+  .bar__link.is-active {
+    color: var(--ink);
+    border-bottom-color: var(--accent);
+  }
+
+  .bar__right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .bar__right form {
+    display: flex;
+  }
+
+  .main {
+    flex: 1;
+    max-width: var(--container);
+    width: 100%;
+    margin-inline: auto;
+    padding: var(--space-7) var(--space-6) var(--space-8);
+  }
+
+  .notice {
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+    padding: var(--space-6);
+    max-width: 620px;
+  }
+
+  .notice h1 {
+    font-family: var(--font-serif);
+    font-size: var(--step-2);
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+  }
+
+  .notice p {
+    color: var(--ink-2);
+    line-height: 1.85;
+    overflow-wrap: anywhere;
+  }
+
+  code {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--paper-3);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 720px) {
+    .bar__inner {
+      padding: 0 var(--space-5);
+      gap: var(--space-4);
+    }
+
+    .main {
+      padding: var(--space-6) var(--space-5) var(--space-7);
+    }
+  }
+</style>

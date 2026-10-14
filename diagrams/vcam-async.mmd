@@ -1,0 +1,24 @@
+flowchart TB
+    C[客户端提交] --> S[服务端起协程]
+    S --> R[(Redis 状态 处理中)]
+    S --> M[调用模型 流式返回]
+    M -->|每个增量| W[(覆盖写结果键 TTL 5 分钟)]
+    C -.->|轮询| Q[查询接口]
+    Q --> R
+    R -->|未完成| C
+    W -->|已完成| DONE[客户端拿到完整结果]
+    C -.->|取消请求| PUB[发布订阅广播任务 ID]
+    PUB --> NODE{持有该任务的节点?}
+    NODE -->|是| CANC[执行取消]
+    NODE -->|否| IGN[忽略]
+    style C fill:#263238,stroke:#4c8dff,color:#ededf0
+    style S fill:#263238,stroke:#4c8dff,color:#ededf0
+    style R fill:#33281a,stroke:#ffb020,color:#ededf0
+    style M fill:#33281a,stroke:#ffb020,color:#ededf0
+    style W fill:#33281a,stroke:#ffb020,color:#ededf0
+    style Q fill:#263238,stroke:#4c8dff,color:#ededf0
+    style DONE fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style PUB fill:#33281a,stroke:#ffb020,color:#ededf0
+    style NODE fill:#33281a,stroke:#ffb020,color:#ededf0
+    style CANC fill:#3a1b1b,stroke:#ef5350,color:#ededf0
+    style IGN fill:#263238,stroke:#4c8dff,color:#ededf0

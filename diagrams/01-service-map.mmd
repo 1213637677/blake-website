@@ -1,0 +1,31 @@
+flowchart TB
+    CLIENT[客户端 / 视频号 / 朋友圈] --> CORE[核心逻辑服务]
+    CORE --> MAAS[MaaS 素材中台]
+    CORE --> NLP[语音转写]
+    CORE --> SEARCH[检索]
+    CORE --> BROKER[视频元信息]
+    MAAS -->|素材主数据| PARTNER[合作方代理]
+    PARTNER <-->|双向同步| WX[微信侧能力<br/>模板库 / 安全 / CDN]
+    PARTNER -.->|代理调用| MAAS
+    subgraph 独立业务线
+        TC[模板创作者]
+        VC[视频创作者]
+        LS[看看·社交]
+        CAM[相机·拍摄]
+    end
+    style 独立业务线 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    OPEN[开放逻辑服务] --> TC
+    OPEN --> CAM
+    style CLIENT fill:#263238,stroke:#4c8dff,color:#ededf0
+    style CORE fill:#263238,stroke:#4c8dff,color:#ededf0
+    style MAAS fill:#263238,stroke:#4c8dff,color:#ededf0
+    style NLP fill:#263238,stroke:#4c8dff,color:#ededf0
+    style SEARCH fill:#263238,stroke:#4c8dff,color:#ededf0
+    style BROKER fill:#263238,stroke:#4c8dff,color:#ededf0
+    style PARTNER fill:#33281a,stroke:#ffb020,color:#ededf0
+    style WX fill:#33281a,stroke:#ffb020,color:#ededf0
+    style TC fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style VC fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style LS fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style CAM fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style OPEN fill:#263238,stroke:#4c8dff,color:#ededf0

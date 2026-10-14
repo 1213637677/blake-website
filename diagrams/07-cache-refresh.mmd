@@ -1,0 +1,28 @@
+flowchart TB
+    OPS[运营发布] --> DB[(数据库)]
+    DB --> PUB[发布刷新消息]
+    subgraph N[多实例收到广播]
+        direction LR
+        N1[实例 1] --> Q[等待队列]
+        N2[实例 2] --> Q
+        N3[实例 N] --> Q
+    end
+    PUB --> N
+    Q --> HEAD{是队首?}
+    HEAD -->|是| RELOAD[真正回源数据库]
+    HEAD -->|否| SKIP[直接返回 不重复回源]
+    RELOAD --> DELAY[随机延迟 削峰]
+    DELAY --> CACHE[(本地缓存已更新)]
+    style OPS fill:#263238,stroke:#4c8dff,color:#ededf0
+    style DB fill:#263238,stroke:#4c8dff,color:#ededf0
+    style PUB fill:#33281a,stroke:#ffb020,color:#ededf0
+    style N fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style N1 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style N2 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style N3 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style Q fill:#33281a,stroke:#ffb020,color:#ededf0
+    style HEAD fill:#33281a,stroke:#ffb020,color:#ededf0
+    style RELOAD fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style SKIP fill:#263238,stroke:#4c8dff,color:#ededf0
+    style DELAY fill:#33281a,stroke:#ffb020,color:#ededf0
+    style CACHE fill:#1b3a2f,stroke:#00e599,color:#ededf0

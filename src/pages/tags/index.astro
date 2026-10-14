@@ -1,0 +1,130 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getAllTags } from '../../lib/entries';
+import { tagHref } from '../../lib/format';
+
+const tags = await getAllTags();
+const max = tags[0]?.count ?? 1;
+---
+
+<BaseLayout title="标签" description="所有标签。">
+  <div class="container page">
+    <header class="head">
+      <p class="eyebrow">Tags</p>
+      <h1 class="head__title">标签</h1>
+      <p class="head__desc">跨文章、项目、笔记的聚合视图。</p>
+    </header>
+
+    {
+      tags.length === 0 ? (
+        <div class="empty">
+          <p class="empty__title">还没有标签</p>
+          <p>给内容加上 <code>tags</code> 后这里会自动出现。</p>
+        </div>
+      ) : (
+        <ul class="cloud">
+          {tags.map((t, i) => (
+            <li>
+              <a class="cloud__item" href={tagHref(t.tag)} style={`--i:${i}`}>
+                <span class="cloud__name">#{t.tag}</span>
+                <span class="cloud__bar" aria-hidden="true">
+                  <span style={`width:${Math.max(10, (t.count / max) * 100)}%`}></span>
+                </span>
+                <span class="cloud__n">{String(t.count).padStart(2, '0')}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-block: var(--space-8) var(--space-9);
+  }
+
+  .head {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+    max-width: 60ch;
+  }
+
+  .head__desc {
+    color: var(--fg-2);
+    font-size: 1.0625rem;
+  }
+
+  .cloud {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 var(--space-7);
+    list-style: none;
+  }
+
+  .cloud__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 90px 34px;
+    align-items: center;
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+    border-bottom: 1px solid var(--line);
+    transition: padding-left 0.18s ease;
+  }
+
+  .cloud__item:hover {
+    padding-left: var(--space-3);
+  }
+
+  .cloud__name {
+    font-family: var(--font-sans);
+    font-size: 1.125rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.15s ease;
+  }
+
+  .cloud__item:hover .cloud__name {
+    color: var(--acc);
+  }
+
+  .cloud__bar {
+    display: block;
+    height: 8px;
+    border: 1.5px solid var(--fg);
+    background: var(--bg);
+  }
+
+  .cloud__bar span {
+    display: block;
+    height: 100%;
+    background: var(--acc);
+  }
+
+  .cloud__n {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--fg-3);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  code {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 720px) {
+    .cloud {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

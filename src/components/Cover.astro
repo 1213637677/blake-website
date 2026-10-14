@@ -1,0 +1,153 @@
+---
+/**
+ * 程序化封面：项目没图时生成几何构图，避免纯色块。
+ * 用 seed 做确定性伪随机，同一条目每次渲染一致。
+ */
+interface Props {
+  seed: string;
+  label?: string;
+  /** 已有封面图则直接用 */
+  src?: string;
+  ratio?: 'wide' | 'square' | 'tall';
+}
+
+const { seed, label = '', src, ratio = 'wide' } = Astro.props;
+
+let h = 0;
+for (let i = 0; i < seed.length; i += 1) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+const rnd = (n: number) => {
+  h = (h * 1664525 + 1013904223) >>> 0;
+  return h % n;
+};
+
+// 极简风：色相收窄到冷调区间，饱和度压低，避免高饱和渐变团
+const hue = 205 + rnd(45);
+const hue2 = (hue + 18 + rnd(28)) % 360;
+
+// 首字符（中文取第一个字，英文取首字母大写）
+const initial = (label.trim()[0] ?? seed[0] ?? '?').toUpperCase();
+
+const bars = Array.from({ length: 5 + rnd(5) }, (_, i) => ({
+  left: rnd(70),
+  width: 8 + rnd(26),
+  top: rnd(70),
+  height: 4 + rnd(18),
+  rot: rnd(5) - 2,
+  solid: i % 3 === 0,
+}));
+
+const circles = Array.from({ length: 2 + rnd(3) }, () => ({
+  left: rnd(80),
+  top: rnd(80),
+  size: 14 + rnd(38),
+}));
+
+const kind = rnd(3);
+---
+
+<div class:list={['cover', `cover--${ratio}`]} aria-hidden="true">
+  {
+    src ? (
+      <img class="cover__img" src={src} alt="" loading="lazy" />
+    ) : (
+      <div class="cover__art" style={`--h1:${hue};--h2:${hue2};--k:${kind}`}>
+        <span class="cover__grid" aria-hidden="true"></span>
+        <span class="cover__initial">{initial}</span>
+        {bars.map((b) => (
+          <span
+            class:list={['cover__bar', { 'is-solid': b.solid }]}
+            style={`left:${b.left}%;width:${b.width}%;top:${b.top}%;height:${b.height}%;transform:rotate(${b.rot}deg)`}
+          />
+        ))}
+        {circles.map((c) => (
+          <span class="cover__dot" style={`left:${c.left}%;top:${c.top}%;width:${c.size}%;padding-top:${c.size}%`} />
+        ))}
+      </div>
+    )
+  }
+</div>
+
+<style>
+  .cover {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .cover--wide {
+    aspect-ratio: 16 / 9;
+  }
+
+  .cover--square {
+    aspect-ratio: 1 / 1;
+  }
+
+  .cover--tall {
+    aspect-ratio: 3 / 4;
+  }
+
+  .cover__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* 极简：近中性底色 + 细网格 + 极淡强调色描边，不用渐变色团 */
+  .cover__art {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(165deg, var(--surface-2) 0%, var(--surface) 100%);
+  }
+
+  .cover__grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  .cover__initial {
+    position: absolute;
+    right: -2%;
+    bottom: -14%;
+    font-family: var(--font-sans);
+    font-size: 62%;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--fg-3);
+    letter-spacing: -0.04em;
+    user-select: none;
+  }
+
+  /* 几何线条用强调色的低透明度版本，保持零插图基调 */
+  .cover__bar {
+    position: absolute;
+    border: 1px solid var(--acc-line);
+    border-radius: 3px;
+  }
+
+  .cover__bar.is-solid {
+    background: var(--acc-soft);
+  }
+
+  .cover__dot {
+    position: absolute;
+    border: 1px solid var(--acc-line);
+    border-radius: 50%;
+    height: 0;
+  }
+
+
+  /* 三种构图变体 */
+  .cover__art[style*='--k:1'] .cover__bar {
+    border-radius: 999px;
+  }
+
+  .cover__art[style*='--k:2'] .cover__dot {
+    border-radius: 3px;
+  }
+</style>

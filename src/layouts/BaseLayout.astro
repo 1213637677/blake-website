@@ -1,0 +1,81 @@
+---
+import '../styles/global.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import Motion from '../components/Motion.astro';
+import { site } from '../config';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogType?: 'website' | 'article';
+  image?: string;
+  width?: 'default' | 'narrow';
+  bodyClass?: string;
+}
+
+const { title, description = site.intro, ogType = 'website', image, width = 'default', bodyClass = '' } = Astro.props;
+
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.tagline}`;
+const canonical = new URL(Astro.url.pathname, site.url).href;
+---
+
+<!doctype html>
+<html lang={site.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={site.name} />
+    {image && <meta property="og:image" content={new URL(image, site.url).href} />}
+    <meta name="twitter:card" content={image ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+
+    <link rel="alternate" type="application/rss+xml" title={site.name} href="/feed.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+
+  <body class={bodyClass}>
+    <a class="skip" href="#main">跳到正文</a>
+    <Motion />
+    <SiteHeader />
+    <main id="main" class:list={['main', { 'main--narrow': width === 'narrow' }]}>
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>
+
+<style>
+  .skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: var(--ink);
+    color: var(--paper);
+    padding: var(--space-3) var(--space-4);
+    z-index: 10001;
+  }
+
+  .skip:focus {
+    left: var(--space-4);
+    top: var(--space-2);
+  }
+
+  .main {
+    min-height: 40vh;
+  }
+
+  .main--narrow :global(.container) {
+    max-width: 900px;
+  }
+</style>

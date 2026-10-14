@@ -1,0 +1,21 @@
+flowchart TB
+    subgraph C[聚合]
+        direction LR
+        RAW[原始流水] --> GROUP[分组统计] --> TRUNC[截断聚合] --> SHARD[分片重算]
+    end
+    subgraph F[过滤]
+        direction LR
+        ENC[二进制编码] --> F1[聚类] --> F2[去重叠] --> F3[非极大值抑制]
+    end
+    C --> F --> LIGHT[点亮新区域]
+    style C fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style F fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style RAW fill:#263238,stroke:#4c8dff,color:#ededf0
+    style GROUP fill:#263238,stroke:#4c8dff,color:#ededf0
+    style TRUNC fill:#263238,stroke:#4c8dff,color:#ededf0
+    style SHARD fill:#263238,stroke:#4c8dff,color:#ededf0
+    style ENC fill:#263238,stroke:#4c8dff,color:#ededf0
+    style F1 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style F2 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style F3 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style LIGHT fill:#1b3a2f,stroke:#00e599,color:#ededf0

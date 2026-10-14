@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Timeline from '../../components/Timeline.astro';
+import { getTimeline, type Unified } from '../../lib/entries';
+
+export async function getStaticPaths() {
+  const items = await getTimeline();
+  const all = [...new Set(items.flatMap((i) => i.tags))];
+  return all.map((tag) => ({
+    params: { tag },
+    props: { tag, items: items.filter((i) => i.tags.includes(tag)) },
+  }));
+}
+
+const { tag, items } = Astro.props as { tag: string; items: Unified[] };
+---
+
+<BaseLayout title={`#${tag}`} description={`标签 ${tag} 下的全部内容。`}>
+  <div class="container page">
+    <header class="head">
+      <p class="eyebrow">Tag</p>
+      <h1 class="head__title">#{tag}</h1>
+      <p class="head__meta">
+        <span class="tag tag--hot">{items.length} 条</span>
+        <a class="link" href="/tags">全部标签</a>
+      </p>
+    </header>
+
+    <h2 class="visually-hidden">相关内容</h2>
+    <Timeline items={items} filterable={false} />
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-block: var(--space-8) var(--space-9);
+  }
+
+  .head {
+    margin-bottom: var(--space-7);
+  }
+
+  .head__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  .link {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+    border-bottom: 1.5px solid var(--line-2);
+    padding-bottom: 2px;
+  }
+
+  .link:hover {
+    color: var(--acc);
+    border-color: var(--acc);
+  }
+</style>

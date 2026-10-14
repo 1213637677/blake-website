@@ -1,0 +1,422 @@
+---
+import Icon from './Icon.astro';
+import { fmtDate, year as yearOf } from '../lib/format';
+import { kindLabel, type Unified } from '../lib/entries';
+
+interface Props {
+  items: Unified[];
+  filterable?: boolean;
+}
+
+const { items, filterable = true } = Astro.props;
+
+const groups: { year: string; items: Unified[] }[] = [];
+for (const it of items) {
+  const y = yearOf(it.date);
+  const last = groups[groups.length - 1];
+  if (last && last.year === y) last.items.push(it);
+  else groups.push({ year: y, items: [it] });
+}
+
+// 节点大小由重要性决定：项目 > 文章 > 笔记
+const NODE_SIZE: Record<string, string> = {
+  project: 'lg',
+  post: 'md',
+  note: 'sm',
+};
+---
+
+<section class="timeline" aria-label="时间线">
+  {
+    filterable && (
+      <div class="filters" role="tablist" aria-label="按类型筛选">
+        <button role="tab" class="seg is-active" data-filter="all" aria-selected="true">全部</button>
+        <button role="tab" class="seg" data-filter="post" aria-selected="false">文章</button>
+        <button role="tab" class="seg" data-filter="project" aria-selected="false">项目</button>
+        <button role="tab" class="seg" data-filter="note" aria-selected="false">笔记</button>
+      </div>
+    )
+  }
+
+  {
+    items.length === 0 && (
+      <div class="empty">
+        <p class="empty__title">还没有记录</p>
+        <p>写下第一篇，或到 <a href="/admin">后台</a> 新建条目。</p>
+      </div>
+    )
+  }
+
+  <div class="stream">
+    {/* 中轴：滚动时填充 */}
+    <div class="axis" aria-hidden="true"><span class="axis__fill"></span></div>
+
+    {
+      groups.map((group) => (
+        <div class="group">
+          <h3 class="group__year">{group.year}</h3>
+
+          <ol class="group__list">
+            {group.items.map((it) => (
+              <li class:list={['node', `node--${NODE_SIZE[it.kind]}`]} data-kind={it.kind}>
+                <span class="node__dot" aria-hidden="true"></span>
+
+                <a class="node__card reveal" href={it.href}>
+                  <span class="node__meta">
+                    <span class:list={['node__kind', `k-${it.kind}`]}>{kindLabel(it.kind)}</span>
+                    <time datetime={it.date.toISOString()}>{fmtDate(it.date)}</time>
+                    {it.pinned && <span class="node__pin">置顶</span>}
+                  </span>
+
+                  <span class="node__title">{it.title}</span>
+                  {it.summary && <span class="node__summary">{it.summary}</span>}
+
+                  {it.tags.length > 0 && (
+                    <span class="node__tags">
+                      {it.tags.slice(0, 4).map((t) => (
+                        <span class="tag">#{t}</span>
+                      ))}
+                    </span>
+                  )}
+
+                  <span class="node__go" aria-hidden="true">
+                    <Icon name="arrowRight" size={16} />
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))
+    }
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector('.timeline');
+  if (root) {
+    const tabs = root.querySelectorAll<HTMLButtonElement>('.seg');
+    const nodes = root.querySelectorAll<HTMLElement>('.node');
+    const groups = root.querySelectorAll<HTMLElement>('.group');
+
+    const apply = (kind: string) => {
+      nodes.forEach((el) => {
+        el.hidden = kind !== 'all' && el.dataset.kind !== kind;
+      });
+      groups.forEach((g) => {
+        g.hidden = g.querySelectorAll<HTMLElement>('.node:not([hidden])').length === 0;
+      });
+    };
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((t) => {
+          const on = t === tab;
+          t.classList.toggle('is-active', on);
+          t.setAttribute('aria-selected', String(on));
+        });
+        apply(tab.dataset.filter ?? 'all');
+      });
+    });
+
+    // 中轴随滚动填充
+    const stream = root.querySelector<HTMLElement>('.stream');
+    const fill = root.querySelector<HTMLElement>('.axis__fill');
+    if (stream && fill) {
+      let raf = 0;
+      const update = () => {
+        raf = 0;
+        const rect = stream.getBoundingClientRect();
+        const mid = window.innerHeight * 0.45;
+        const p = rect.height > 0 ? (mid - rect.top) / rect.height : 0;
+        fill.style.transform = `scaleY(${Math.min(1, Math.max(0, p))})`;
+      };
+      window.addEventListener(
+        'scroll',
+        () => {
+          if (!raf) raf = requestAnimationFrame(update);
+        },
+        { passive: true },
+      );
+      window.addEventListener('resize', update);
+      update();
+    }
+  }
+</script>
+
+<style>
+  .filters {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    border: 1.5px solid var(--fg);
+    border-radius: var(--radius);
+    background: var(--bg);
+    margin-bottom: var(--space-7);
+  }
+
+  .seg {
+    min-height: 34px;
+    padding: 0 var(--space-4);
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--fg-2);
+    font-size: 0.875rem;
+    font-weight: 550;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .seg:hover {
+    color: var(--fg);
+  }
+
+  .seg.is-active {
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  /* ---------- 中轴叙事流 ---------- */
+  .stream {
+    position: relative;
+    padding-left: 44px;
+  }
+
+  .axis {
+    position: absolute;
+    left: 12px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: var(--line);
+  }
+
+  .axis__fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--acc), var(--g-project));
+    box-shadow: none;
+    transform: scaleY(0);
+    transform-origin: 50% 0;
+  }
+
+  .group + .group {
+    margin-top: var(--space-6);
+  }
+
+  .group__year {
+    position: relative;
+    font-family: var(--font-mono);
+    color: var(--fg-2);
+    margin-bottom: var(--space-4);
+    padding-left: 0;
+  }
+
+  /* 年份前的小方块，压在轴上 */
+  .group__year::before {
+    content: '';
+    position: absolute;
+    left: -38px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    background: var(--acc);
+    box-shadow: none;
+    transform: translateY(-50%);
+  }
+
+  .group__list {
+    list-style: none;
+  }
+
+  .node {
+    position: relative;
+  }
+
+  .node + .node {
+    margin-top: var(--space-3);
+  }
+
+  /* 节点：大小按类型区分 */
+  .node__dot {
+    position: absolute;
+    left: -38px;
+    top: 26px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--line-2);
+    border: 0;
+    transform: translateX(-50%);
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .node--lg .node__dot {
+    width: 13px;
+    height: 13px;
+    top: 22px;
+    background: var(--acc);
+    box-shadow: none;
+  }
+
+  .node--sm .node__dot {
+    width: 7px;
+    height: 7px;
+    top: 28px;
+  }
+
+  .node__card {
+    display: block;
+    padding: var(--space-4) var(--space-5);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg);
+    position: relative;
+    transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+  }
+
+  .node__card:hover {
+    border-color: var(--acc);
+    background: var(--surface);
+    transform: translateX(5px);
+    
+  }
+
+  .node:hover .node__dot {
+    background: var(--acc);
+    box-shadow: none;
+    transform: translateX(-50%) scale(1.3);
+  }
+
+  .node__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+  }
+
+  .node__kind {
+    letter-spacing: 0.14em;
+    color: var(--fg-2);
+  }
+
+  .k-project {
+    color: var(--acc);
+  }
+
+  .k-note {
+    color: var(--fg-3);
+  }
+
+  .node__pin {
+    background: var(--g-note);
+    color: #1a1a18;
+    padding: 1px 6px;
+    letter-spacing: 0.08em;
+  }
+
+  .node__title {
+    display: block;
+    margin-top: var(--space-2);
+    font-size: 1.0625rem;
+    font-weight: 650;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .node--lg .node__title {
+    font-size: 1.1875rem;
+  }
+
+  .node__summary {
+    display: block;
+    margin-top: var(--space-2);
+    color: var(--fg-2);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    text-wrap: pretty;
+  }
+
+  .node__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+
+  .node__tags .tag {
+    font-size: 0.625rem;
+  }
+
+  .node__go {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    color: var(--fg-3);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .node__card:hover .node__go {
+    opacity: 1;
+    transform: none;
+    color: var(--acc);
+  }
+
+  @media (max-width: 720px) {
+    .stream {
+      padding-left: 30px;
+    }
+
+    /* 移动端把条目间距压紧，避免整页滚动过长 */
+    .node + .node {
+      margin-top: var(--space-2);
+    }
+
+    .node__card {
+      padding: var(--space-3) var(--space-4);
+    }
+
+    .axis {
+      left: 8px;
+    }
+
+    .group__year::before {
+      left: -28px;
+    }
+
+    .node__dot,
+    .node--lg .node__dot,
+    .node--sm .node__dot {
+      left: -26px;
+    }
+
+    .node__card {
+      padding: var(--space-4);
+    }
+
+    .node__card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .node__go {
+      opacity: 1;
+      transform: none;
+    }
+
+    .filters {
+      width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+  }
+</style>

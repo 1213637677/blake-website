@@ -1,0 +1,33 @@
+flowchart TB
+    subgraph S1[识别]
+        direction LR
+        REQ[请求] --> ID[工程识别] --> DIR[方向判定] --> RATIO[画幅判定] --> CFG[构造配置]
+    end
+    subgraph S2[排序]
+        direction LR
+        RANK{外部排序服务} --> CHECK{结果足够?}
+    end
+    subgraph S3[组装]
+        direction LR
+        ASSEMBLE[三段拼装] --> FILTER[去重与过滤]
+    end
+    S1 --> S2
+    RANK -->|入口分流| R4[规则版]
+    CHECK -->|不足| R4
+    R4 --> S3
+    CHECK -->|足够| S3
+    S3 --> OUT[最终列表]
+    style S1 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style S2 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style S3 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style REQ fill:#263238,stroke:#4c8dff,color:#ededf0
+    style ID fill:#263238,stroke:#4c8dff,color:#ededf0
+    style DIR fill:#263238,stroke:#4c8dff,color:#ededf0
+    style RATIO fill:#263238,stroke:#4c8dff,color:#ededf0
+    style CFG fill:#263238,stroke:#4c8dff,color:#ededf0
+    style RANK fill:#33281a,stroke:#ffb020,color:#ededf0
+    style CHECK fill:#33281a,stroke:#ffb020,color:#ededf0
+    style R4 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style ASSEMBLE fill:#263238,stroke:#4c8dff,color:#ededf0
+    style FILTER fill:#263238,stroke:#4c8dff,color:#ededf0
+    style OUT fill:#1b3a2f,stroke:#00e599,color:#ededf0

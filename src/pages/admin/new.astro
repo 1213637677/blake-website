@@ -1,0 +1,39 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminEditor from '../../components/AdminEditor.astro';
+import { verifySession } from '../../lib/auth';
+import { ADMIN_COOKIE } from '../../config';
+import { isCollection, type CollectionName } from '../../lib/store';
+
+export const prerender = false;
+
+if (!verifySession(Astro.cookies.get(ADMIN_COOKIE)?.value)) {
+  return Astro.redirect('/admin/login');
+}
+
+const raw = Astro.url.searchParams.get('c') ?? 'posts';
+const collection: CollectionName = isCollection(raw) ? raw : 'posts';
+---
+
+<AdminLayout>
+  <header class="head">
+    <p class="eyebrow">New</p>
+    <h1 class="title">新建条目</h1>
+  </header>
+
+  <AdminEditor collection={collection} entry={null} />
+</AdminLayout>
+
+<style>
+  .head {
+    margin-bottom: var(--space-5);
+  }
+
+  .title {
+    font-family: var(--font-serif);
+    font-size: var(--step-3);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-top: var(--space-3);
+  }
+</style>

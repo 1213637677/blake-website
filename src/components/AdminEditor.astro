@@ -1,0 +1,567 @@
+---
+import Icon from './Icon.astro';
+import type { CollectionName } from '../lib/store';
+import type { EntryFile } from '../lib/store';
+
+interface Props {
+  collection: CollectionName;
+  entry: EntryFile | null;
+}
+
+const { collection, entry } = Astro.props;
+
+const data = entry?.data ?? {};
+const body = entry?.body ?? '';
+const isNew = entry === null;
+
+const str = (k: string, fallback = '') => String(data[k] ?? fallback);
+const bool = (k: string) => Boolean(data[k]);
+const arr = (k: string) => (Array.isArray(data[k]) ? (data[k] as unknown[]).map(String) : []);
+
+// 日期字段可能来自 Date 或字符串
+const rawDate = data.date;
+const dateStr =
+  rawDate instanceof Date
+    ? rawDate.toISOString().slice(0, 10)
+    : typeof rawDate === 'string' && rawDate
+      ? rawDate.slice(0, 10)
+      : new Date().toISOString().slice(0, 10);
+
+const rawUpdated = data.updated;
+const updatedStr =
+  rawUpdated instanceof Date
+    ? rawUpdated.toISOString().slice(0, 10)
+    : typeof rawUpdated === 'string' && rawUpdated
+      ? rawUpdated.slice(0, 10)
+      : '';
+
+const links = Array.isArray(data.links) ? (data.links as { label?: string; href?: string; kind?: string }[]) : [];
+const linksText = links.map((l) => `${l.label ?? ''} | ${l.href ?? ''} | ${l.kind ?? 'source'}`).join('\n');
+
+const COLLECTIONS: { value: CollectionName; label: string }[] = [
+  { value: 'posts', label: '文章' },
+  { value: 'projects', label: '项目' },
+  { value: 'notes', label: '笔记' },
+];
+---
+
+<form method="post" action="/admin/save" class="editor" id="editor-form">
+  <input type="hidden" name="collection" value={collection} />
+  <input type="hidden" name="originalSlug" value={entry?.slug ?? ''} />
+
+  <div class="editor__grid">
+    <section class="panel">
+      <h2 class="panel__title meta">元信息</h2>
+
+      {
+        isNew ? (
+          <label class="field">
+            <span class="field__label">类型</span>
+            <select class="input" name="collection">
+              {COLLECTIONS.map((c) => (
+                <option value={c.value} selected={c.value === collection}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p class="field">
+            <span class="field__label">类型</span>
+            <span class="field__static">{COLLECTIONS.find((c) => c.value === collection)?.label}</span>
+          </p>
+        )
+      }
+
+      <label class="field">
+        <span class="field__label">标题</span>
+        <input class="input" name="title" value={str('title')} required placeholder="写个标题" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">文件名（slug）</span>
+        <input
+          class="input"
+          name="slug"
+          value={entry?.slug ?? ''}
+          placeholder="my-first-post"
+          pattern="[a-z0-9-]+"
+          title="只允许小写字母、数字与连字符"
+        />
+        <span class="field__hint">决定网址。留空则按标题自动生成。</span>
+      </label>
+
+      <label class="field">
+        <span class="field__label">摘要</span>
+        <textarea class="input input--area" name="summary" rows="2" placeholder="一句话，用于列表与 SEO">{str('summary')}</textarea>
+      </label>
+
+      <div class="row2">
+        <label class="field">
+          <span class="field__label">日期</span>
+          <input class="input" type="date" name="date" value={dateStr} required />
+        </label>
+        <label class="field">
+          <span class="field__label">更新日期</span>
+          <input class="input" type="date" name="updated" value={updatedStr} />
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="field__label">标签</span>
+        <input class="input" name="tags" value={arr('tags').join(', ')} placeholder="用逗号分隔" />
+      </label>
+
+      {/* 文章专属 */}
+      {
+        collection === 'posts' && (
+          <label class="field">
+            <span class="field__label">文章类型</span>
+            <select class="input" name="kind">
+              <option value="essay" selected={str('kind', 'essay') === 'essay'}>随笔</option>
+              <option value="learning" selected={str('kind') === 'learning'}>学习</option>
+              <option value="retro" selected={str('kind') === 'retro'}>复盘</option>
+            </select>
+          </label>
+        )
+      }
+
+      {/* 项目专属 */}
+      {
+        collection === 'projects' && (
+          <>
+            <div class="row2">
+              <label class="field">
+                <span class="field__label">项目类型</span>
+                <select class="input" name="kind">
+                  <option value="personal" selected={str('kind', 'personal') === 'personal'}>个人</option>
+                  <option value="work" selected={str('kind') === 'work'}>工作</option>
+                </select>
+              </label>
+              <label class="field">
+                <span class="field__label">状态</span>
+                <select class="input" name="status">
+                  <option value="shipped" selected={str('status', 'shipped') === 'shipped'}>已完成</option>
+                  <option value="active" selected={str('status') === 'active'}>进行中</option>
+                  <option value="paused" selected={str('status') === 'paused'}>暂停</option>
+                  <option value="archived" selected={str('status') === 'archived'}>归档</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="field__label">我的角色</span>
+              <input class="input" name="role" value={str('role')} placeholder="例如：后端负责人" />
+            </label>
+
+            <div class="row2">
+              <label class="field">
+                <span class="field__label">时间段</span>
+                <input class="input" name="period" value={str('period')} placeholder="2024 — 2025" />
+              </label>
+              <label class="field">
+                <span class="field__label">封面图</span>
+                <input class="input" name="cover" value={str('cover')} placeholder="/uploads/xxx.png" />
+              </label>
+            </div>
+
+            <label class="field">
+              <span class="field__label">技术栈</span>
+              <input class="input" name="stack" value={arr('stack').join(', ')} placeholder="用逗号分隔" />
+            </label>
+
+            <label class="field">
+              <span class="field__label">外链</span>
+              <textarea class="input input--area" name="links" rows="3" placeholder={"每行一条：\nDemo | https://... | demo\n源码 | https://... | source"}>{linksText}</textarea>
+              <span class="field__hint">格式：<code>名称 | 网址 | demo|source|post</code></span>
+            </label>
+
+            <label class="switch">
+              <input type="checkbox" name="featured" checked={bool('featured')} />
+              <span>首页精选</span>
+            </label>
+          </>
+        )
+      }
+
+      <div class="switches">
+        <label class="switch">
+          <input type="checkbox" name="draft" checked={bool('draft')} />
+          <span>存为草稿</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" name="pinned" checked={bool('pinned')} />
+          <span>置顶</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="panel panel--body">
+      <div class="panel__head">
+        <h2 class="panel__title meta">正文（Markdown）</h2>
+        <div class="panel__tools">
+          <button class="chip" type="button" data-tab="write" aria-pressed="true">编辑</button>
+          <button class="chip" type="button" data-tab="preview" aria-pressed="false">预览</button>
+        </div>
+      </div>
+
+      <textarea class="body-input" name="body" id="body" rows="24" spellcheck="false">{body}</textarea>
+      <div class="preview prose" id="preview" hidden></div>
+
+      <p class="panel__hint">
+        支持标题、列表、引用、代码块、链接与图片。预览用简易 Markdown 渲染，最终以站点渲染为准。
+      </p>
+    </section>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn--primary" type="submit">
+      <Icon name="save" size={16} />
+      保存
+    </button>
+    <a class="btn" href="/admin">取消</a>
+    {
+      !isNew && (
+        <button
+          class="btn btn--danger"
+          type="submit"
+          formaction="/admin/delete"
+          onclick="return confirm('确认删除这个条目？此操作不可撤销。')"
+        >
+          <Icon name="trash" size={16} />
+          删除
+        </button>
+      )
+    }
+  </div>
+</form>
+
+<script>
+  // 预览：够用的 Markdown 子集渲染，不引入运行时依赖
+  const input = document.querySelector<HTMLTextAreaElement>('#body');
+  const preview = document.querySelector<HTMLElement>('#preview');
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-tab]'));
+
+  const esc = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+  const inline = (s: string) =>
+    esc(s)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+
+  function renderMd(md: string): string {
+    const lines = md.split('\n');
+    let out = '';
+    let i = 0;
+    let inList = false;
+
+    const closeList = () => {
+      if (inList) {
+        out += '</ul>';
+        inList = false;
+      }
+    };
+
+    while (i < lines.length) {
+      const line = lines[i] ?? '';
+
+      if (line.startsWith('```')) {
+        closeList();
+        const lang = line.slice(3).trim();
+        const buf: string[] = [];
+        i += 1;
+        while (i < lines.length && !(lines[i] ?? '').startsWith('```')) {
+          buf.push(lines[i] ?? '');
+          i += 1;
+        }
+        i += 1;
+        out += `<pre><code data-lang="${esc(lang)}">${esc(buf.join('\n'))}</code></pre>`;
+        continue;
+      }
+
+      const h = line.match(/^(#{1,4})\s+(.*)$/);
+      if (h) {
+        closeList();
+        const level = Math.min(4, h[1]!.length + 1);
+        out += `<h${level}>${inline(h[2] ?? '')}</h${level}>`;
+        i += 1;
+        continue;
+      }
+
+      if (/^\s*[-*]\s+/.test(line)) {
+        if (!inList) {
+          out += '<ul>';
+          inList = true;
+        }
+        out += `<li>${inline(line.replace(/^\s*[-*]\s+/, ''))}</li>`;
+        i += 1;
+        continue;
+      }
+
+      if (/^\s*>\s?/.test(line)) {
+        closeList();
+        out += `<blockquote>${inline(line.replace(/^\s*>\s?/, ''))}</blockquote>`;
+        i += 1;
+        continue;
+      }
+
+      if (!line.trim()) {
+        closeList();
+        i += 1;
+        continue;
+      }
+
+      closeList();
+      out += `<p>${inline(line)}</p>`;
+      i += 1;
+    }
+
+    closeList();
+    return out;
+  }
+
+  const show = (which: string) => {
+    const isPreview = which === 'preview';
+    if (input) input.hidden = isPreview;
+    if (preview) {
+      preview.hidden = !isPreview;
+      if (isPreview) preview.innerHTML = renderMd(input?.value ?? '');
+    }
+    tabs.forEach((t) => {
+      const on = t.dataset.tab === which;
+      t.setAttribute('aria-pressed', String(on));
+      t.classList.toggle('is-active', on);
+    });
+  };
+
+  tabs.forEach((t) => t.addEventListener('click', () => show(t.dataset.tab ?? 'write')));
+</script>
+
+<style>
+  .editor__grid {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .panel {
+    border: 1.5px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--paper-2);
+    padding: var(--space-5);
+  }
+
+  .panel__title {
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: var(--space-4);
+  }
+
+  .panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: var(--space-4);
+  }
+
+  .panel__head .panel__title {
+    padding-bottom: 0;
+    border-bottom: 0;
+    margin-bottom: 0;
+  }
+
+  .panel__tools {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border: 1.5px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--paper);
+  }
+
+  .chip {
+    min-height: 30px;
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .chip.is-active {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .field {
+    display: block;
+    margin-bottom: var(--space-4);
+  }
+
+  .field__label {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: var(--step--1);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: var(--space-2);
+  }
+
+  .field__hint {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+
+  .input {
+    width: 100%;
+    min-height: 40px;
+    padding: 0 var(--space-3);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9375rem;
+  }
+
+  .field__static {
+    display: inline-block;
+    min-height: 40px;
+    line-height: 40px;
+    padding: 0 var(--space-3);
+    border: 1.5px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--paper-3);
+    color: var(--ink-2);
+    font-size: 0.9375rem;
+    width: 100%;
+  }
+
+  textarea.input {
+    padding: var(--space-2) var(--space-3);
+    line-height: 1.6;
+    resize: vertical;
+  }
+
+  .input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .switch {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.9375rem;
+    cursor: pointer;
+    min-height: 32px;
+  }
+
+  .switch input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+  }
+
+  .switches {
+    display: flex;
+    gap: var(--space-5);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--rule);
+  }
+
+  .body-input {
+    width: 100%;
+    min-height: 520px;
+    padding: var(--space-4);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.7;
+    resize: vertical;
+    tab-size: 2;
+  }
+
+  .body-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .preview {
+    min-height: 520px;
+    padding: var(--space-4);
+    border: 1.5px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--paper);
+    overflow-wrap: anywhere;
+  }
+
+  .panel__hint {
+    margin-top: var(--space-3);
+    font-size: 0.75rem;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+    flex-wrap: wrap;
+  }
+
+  .btn--danger {
+    margin-left: auto;
+    color: var(--signal);
+  }
+
+  .btn--danger:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+
+  code {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--paper-3);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 900px) {
+    .editor__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .row2 {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .body-input,
+    .preview {
+      min-height: 380px;
+    }
+  }
+</style>

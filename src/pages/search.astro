@@ -1,0 +1,303 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Icon from '../components/Icon.astro';
+---
+
+<BaseLayout title="搜索" description="全站搜索。">
+  <div class="container page">
+    <header class="head">
+      <p class="eyebrow">Search</p>
+      <h1 class="head__title">找一找</h1>
+      <p class="head__desc">匹配标题、摘要、标签与正文。<span class="mark">中英文都可用。</span></p>
+    </header>
+
+    <div class="box">
+      <Icon name="search" size={20} class="box__icon" />
+      <input
+        id="q"
+        class="box__input"
+        type="search"
+        placeholder="输入关键词"
+        autocomplete="off"
+        aria-label="搜索关键词"
+      />
+      <kbd class="box__kbd">/</kbd>
+    </div>
+
+    <p class="status meta" id="status" role="status" aria-live="polite"></p>
+
+    <ol class="results" id="results"></ol>
+  </div>
+</BaseLayout>
+
+<script>
+  type Doc = {
+    kind: string;
+    title: string;
+    summary: string;
+    tags: string[];
+    href: string;
+    date: string;
+    text: string;
+    minutes?: number;
+  };
+
+  const KIND_LABEL: Record<string, string> = {
+    post: 'POST',
+    project: 'PROJECT',
+    note: 'LOG',
+  };
+
+  const input = document.querySelector<HTMLInputElement>('#q');
+  const results = document.querySelector<HTMLOListElement>('#results');
+  const status = document.querySelector<HTMLElement>('#status');
+
+  let docs: Doc[] = [];
+  let loaded = false;
+
+  async function load() {
+    if (loaded) return;
+    const res = await fetch('/search-index.json');
+    const data = await res.json();
+    docs = data.docs ?? [];
+    loaded = true;
+  }
+
+  const esc = (s: string) =>
+    s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+  const dateStr = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getUTCFullYear()}.${String(d.getUTCMonth() + 1).padStart(2, '0')}.${String(d.getUTCDate()).padStart(2, '0')}`;
+  };
+
+  function snippet(text: string, q: string) {
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return esc(text.slice(0, 130)) + (text.length > 130 ? '…' : '');
+    const start = Math.max(0, i - 45);
+    const raw = text.slice(start, start + 170);
+    return (start > 0 ? '…' : '') + highlight(raw, q) + (start + 170 < text.length ? '…' : '');
+  }
+
+  function highlight(text: string, q: string) {
+    if (!q) return esc(text);
+    const idx = text.toLowerCase().indexOf(q.toLowerCase());
+    if (idx < 0) return esc(text);
+    return (
+      esc(text.slice(0, idx)) +
+      '<mark>' +
+      esc(text.slice(idx, idx + q.length)) +
+      '</mark>' +
+      esc(text.slice(idx + q.length))
+    );
+  }
+
+  function render(q: string) {
+    const query = q.trim().toLowerCase();
+    if (!results || !status) return;
+
+    if (!query) {
+      results.innerHTML = '';
+      status.textContent = docs.length ? `已索引 ${docs.length} 条` : '';
+      return;
+    }
+
+    const hits = docs
+      .map((d) => {
+        const hay = `${d.title} ${d.summary} ${d.tags.join(' ')} ${d.text}`.toLowerCase();
+        if (!hay.includes(query)) return null;
+        let score = 1;
+        if (d.title.toLowerCase().includes(query)) score += 5;
+        if (d.tags.some((t) => t.toLowerCase().includes(query))) score += 2;
+        return { d, score };
+      })
+      .filter((x): x is { d: Doc; score: number } => x !== null)
+      .sort((a, b) => b.score - a.score || b.d.date.localeCompare(a.d.date));
+
+    status.textContent = hits.length ? `${hits.length} 条结果` : '没有匹配的内容';
+
+    results.innerHTML = hits
+      .slice(0, 40)
+      .map(({ d }) => {
+        const shown = d.text.toLowerCase().includes(query) ? snippet(d.text, query) : highlight(d.summary, query);
+        return `<li class="hit">
+          <a class="hit__link" href="${esc(d.href)}">
+            <span class="hit__meta">
+              <span class="hit__kind k-${d.kind}">${KIND_LABEL[d.kind] ?? d.kind}</span>
+              <span>${dateStr(d.date)}</span>
+              ${d.minutes ? `<span>/ ${d.minutes} min</span>` : ''}
+            </span>
+            <span class="hit__title">${highlight(d.title, query)}</span>
+            <span class="hit__snippet">${shown}</span>
+          </a>
+        </li>`;
+      })
+      .join('');
+  }
+
+  let timer: number | undefined;
+  input?.addEventListener('input', async () => {
+    const q = input.value;
+    window.clearTimeout(timer);
+    timer = window.setTimeout(async () => {
+      await load();
+      render(q);
+    }, 150);
+  });
+
+  load()
+    .then(() => render(input?.value ?? ''))
+    .catch(() => {
+      if (status) status.textContent = '索引加载失败';
+    });
+
+  // 支持 /search?q=xxx
+  const preset = new URLSearchParams(location.search).get('q');
+  if (preset && input) {
+    input.value = preset;
+    load().then(() => render(preset));
+  }
+
+  // 按 / 聚焦搜索框（不在输入框内时）
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.metaKey || e.ctrlKey) return;
+    const el = document.activeElement;
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) return;
+    e.preventDefault();
+    input?.focus();
+  });
+</script>
+
+<style>
+  .page {
+    padding-block: var(--space-8) var(--space-9);
+  }
+
+  .head {
+    margin-bottom: var(--space-6);
+    max-width: 60ch;
+  }
+
+  .head__desc {
+    color: var(--fg-2);
+    font-size: 1.0625rem;
+  }
+
+  .box {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0 var(--space-4);
+    border: 1.5px solid var(--fg);
+    border-radius: var(--radius);
+    background: var(--bg);
+    transition: box-shadow 0.18s ease;
+  }
+
+  .box:focus-within {
+    box-shadow: none;
+  }
+
+  .box__icon {
+    color: var(--fg-3);
+    flex: 0 0 auto;
+  }
+
+  .box__input {
+    flex: 1;
+    min-height: 56px;
+    min-width: 0;
+    border: 0;
+    background: none;
+    color: var(--fg);
+    font: inherit;
+    font-size: 1.125rem;
+  }
+
+  /* 不能只写 outline:none —— 键盘用户会失去焦点指示。
+     改为让父容器在 focus-within 时呈现强调色边框 */
+  .box:focus-within {
+    border-color: var(--acc);
+  }
+
+  .box__kbd {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    border: 1.5px solid var(--line-2);
+    border-radius: 3px;
+    padding: 2px 7px;
+    color: var(--fg-3);
+    flex: 0 0 auto;
+  }
+
+  .status {
+    margin-top: var(--space-3);
+    text-transform: none;
+    letter-spacing: 0.06em;
+    min-height: 1.2em;
+  }
+
+  .results {
+    list-style: none;
+    margin-top: var(--space-4);
+  }
+
+  .hit {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .hit__link {
+    display: block;
+    padding: var(--space-4) var(--space-3);
+    transition: background 0.15s ease, padding-left 0.18s ease;
+  }
+
+  .hit__link:hover {
+    background: var(--surface);
+    padding-left: var(--space-4);
+  }
+
+  .hit__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--fg-3);
+  }
+
+  .hit__kind {
+    letter-spacing: 0.14em;
+  }
+
+  .k-project {
+    color: var(--acc);
+  }
+
+  .hit__title {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--font-sans);
+    font-size: 1.1875rem;
+    font-weight: 650;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .hit__snippet {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    color: var(--fg-2);
+    overflow-wrap: anywhere;
+  }
+
+  .results :global(mark) {
+    background: var(--g-note);
+    color: var(--fg);
+    padding: 0 2px;
+  }
+</style>

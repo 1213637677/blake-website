@@ -1,0 +1,26 @@
+flowchart TB
+    C[客户端提交] --> S[生成任务 ID]
+    S --> R[(Redis 写状态<br/>TTL 5 分钟)]
+    S --> Q[投递到延迟队列]
+    S --> RET[返回 任务ID + 轮询间隔 + 上下文串]
+    Q --> IDEM{幂等检查}
+    IDEM -->|非 Processing| DROP[丢弃消息]
+    IDEM -->|是| MODEL[同步调用模型]
+    MODEL --> RES{结果}
+    RES -->|成功| FIN[(写 Finish + 结果)]
+    RES -->|429 未超上限| Q
+    RES -->|其他失败| FAIL[(写 Failed)]
+    RET -.->|客户端按间隔轮询| QRY[查询接口]
+    QRY --> FIN
+    style C fill:#263238,stroke:#4c8dff,color:#ededf0
+    style S fill:#263238,stroke:#4c8dff,color:#ededf0
+    style R fill:#33281a,stroke:#ffb020,color:#ededf0
+    style Q fill:#33281a,stroke:#ffb020,color:#ededf0
+    style RET fill:#263238,stroke:#4c8dff,color:#ededf0
+    style IDEM fill:#33281a,stroke:#ffb020,color:#ededf0
+    style DROP fill:#3a1b1b,stroke:#ef5350,color:#ededf0
+    style MODEL fill:#263238,stroke:#4c8dff,color:#ededf0
+    style RES fill:#33281a,stroke:#ffb020,color:#ededf0
+    style FIN fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style FAIL fill:#3a1b1b,stroke:#ef5350,color:#ededf0
+    style QRY fill:#263238,stroke:#4c8dff,color:#ededf0

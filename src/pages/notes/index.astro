@@ -1,0 +1,222 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FilterBar from '../../components/FilterBar.astro';
+import { render } from 'astro:content';
+import { getNotes } from '../../lib/entries';
+import { fmtDate, year as yearOf } from '../../lib/format';
+
+const notes = await getNotes();
+const tags = [...new Set(notes.flatMap((n) => n.data.tags))].sort();
+
+const rendered = await Promise.all(
+  notes.map(async (n) => ({ note: n, Content: (await render(n)).Content })),
+);
+
+const groups: { label: string; items: typeof rendered }[] = [];
+for (const item of rendered) {
+  const n = item.note;
+  const label = `${yearOf(n.data.date)}.${String(n.data.date.getUTCMonth() + 1).padStart(2, '0')}`;
+  const last = groups[groups.length - 1];
+  if (last && last.label === label) last.items.push(item);
+  else groups.push({ label, items: [item] });
+}
+---
+
+<BaseLayout title="笔记" description="一句话到几百字的轻量记录。">
+  <div class="container page">
+    <header class="head">
+      <p class="eyebrow">Notes</p>
+      <h1 class="head__title">随手记</h1>
+      <p class="head__desc">读到、想到、踩到的东西。<span class="mark">像贴在墙上的便签，不追求完整。</span></p>
+    </header>
+
+    <FilterBar tags={tags} itemSelector="[data-item]" />
+
+    {
+      notes.length === 0 ? (
+        <div class="empty">
+          <p class="empty__title">还没有笔记</p>
+          <p>在 <code>content/notes/</code> 新建 Markdown，或到 <a href="/admin">后台</a> 记一条。</p>
+        </div>
+      ) : (
+        <div class="wall">
+          {groups.map((group) => (
+            <section class="month" data-group>
+              <h2 class="month__label">{group.label}</h2>
+
+              <div class="month__grid">
+                {group.items.map(({ note: n, Content }) => (
+                  <article
+                    class="scrap reveal"
+                    id={n.id}
+                    data-item
+                    data-search={`${n.data.title} ${n.data.summary} ${n.data.tags.join(' ')}`}
+                    data-tags={n.data.tags.join('|')}
+                  >
+                    <p class="scrap__date meta">
+                      <time datetime={n.data.date.toISOString()}>{fmtDate(n.data.date)}</time>
+                      {n.data.draft && <span class="draft">草稿</span>}
+                    </p>
+
+                    {n.data.title && <h3 class="scrap__title">{n.data.title}</h3>}
+
+                    <div class="scrap__body">
+                      <Content />
+                    </div>
+
+                    {n.data.tags.length > 0 && (
+                      <ul class="tag-list scrap__tags">
+                        {n.data.tags.map((t) => (
+                          <li><span class="tag">#{t}</span></li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      )
+    }
+
+    <div class="empty" data-filter-empty hidden>
+      <p class="empty__title">没有匹配的笔记</p>
+      <p>换个关键词，或清空筛选。</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-block: var(--space-8) var(--space-9);
+  }
+
+  .head {
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--line);
+    max-width: 60ch;
+  }
+
+  .head__desc {
+    color: var(--fg-2);
+    font-size: 1.0625rem;
+    line-height: 1.85;
+  }
+
+  .month + .month {
+    margin-top: var(--space-8);
+  }
+
+  .month__label {
+    font-family: var(--font-sans);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    padding-bottom: var(--space-3);
+    border-bottom: 2px solid var(--fg);
+    margin-bottom: var(--space-5);
+  }
+
+  .month__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-5);
+  }
+
+  /* 极简卡片：与全站列表一致，无旋转、无图钉、无硬阴影 */
+  .scrap {
+    position: relative;
+    padding: var(--space-5);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    transition: border-color var(--dur) var(--ease);
+    scroll-margin-top: 90px;
+    min-width: 0;
+  }
+
+  .scrap:hover {
+    border-color: var(--line-2);
+  }
+
+  .scrap__date {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .draft {
+    background: var(--g-note);
+    color: #1a1a18;
+    padding: 1px 5px;
+  }
+
+  .scrap__title {
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin-top: var(--space-2);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .scrap__body {
+    margin-top: var(--space-2);
+    font-size: 0.9375rem;
+    line-height: 1.75;
+    color: var(--fg-2);
+    overflow-wrap: anywhere;
+  }
+
+  .scrap__body :global(p) + :global(p) {
+    margin-top: var(--space-3);
+  }
+
+  .scrap__body :global(a) {
+    color: var(--acc);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .scrap__body :global(code) {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .scrap__body :global(ul),
+  .scrap__body :global(ol) {
+    padding-left: 1.25em;
+    margin-top: var(--space-2);
+  }
+
+  .scrap__tags {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+
+  .scrap__tags .tag {
+    font-size: 0.625rem;
+  }
+
+  code {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  @media (max-width: 640px) {
+    .month__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+
+  }
+</style>

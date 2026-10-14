@@ -1,0 +1,365 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Timeline from '../components/Timeline.astro';
+import Cover from '../components/Cover.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../config';
+import { getTimeline, getProjects, getNotes, getPosts } from '../lib/entries';
+import { fmtDate } from '../lib/format';
+
+const timeline = await getTimeline();
+const projects = await getProjects();
+const notes = await getNotes();
+const posts = await getPosts();
+
+const featured = (
+  projects.filter((p) => p.data.featured).length ? projects.filter((p) => p.data.featured) : projects
+).slice(0, 3);
+
+const activeProject = projects.find((p) => p.data.status === 'active');
+const latestNote = notes[0];
+
+const stats = [
+  { n: projects.length, label: '项目' },
+  { n: posts.length, label: '文章' },
+  { n: notes.length, label: '笔记' },
+];
+---
+
+<BaseLayout>
+  {/* ============ 首屏：只有排版 ============ */}
+  <section class="hero">
+    <div class="container">
+      <h1 class="display">{site.fullName}</h1>
+      <p class="hero__tagline">{site.tagline}</p>
+      {site.intro && <p class="hero__intro">{site.intro}</p>}
+
+      <div class="hero__row">
+        <div class="hero__actions">
+          <a class="btn btn--primary" href="/projects">
+            浏览项目
+            <Icon name="arrowRight" size={14} />
+          </a>
+          <a class="btn" href="/writing">读文章</a>
+        </div>
+
+        <p class="hero__stats-line">
+          {stats.map((s) => `${s.n} ${s.label}`).join(' · ')}
+        </p>
+      </div>
+
+      {/* 状态：一行键值对，不用面板 */}
+      <dl class="status">
+        {
+          [
+            activeProject && { k: '在做', v: activeProject.data.title, href: `/projects/${activeProject.id}` },
+            latestNote && { k: '最新', v: latestNote.data.title, href: `/notes#${latestNote.id}` },
+            site.now && { k: '近况', v: site.now },
+            timeline[0] && { k: '更新', v: fmtDate(timeline[0].date) },
+          ]
+            .filter(Boolean)
+            .map((row) => (
+              <div class="status__row">
+                <dt>{row.k}</dt>
+                <dd>{row.href ? <a href={row.href}>{row.v}</a> : <span>{row.v}</span>}</dd>
+              </div>
+            ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  {/* ============ 精选项目 ============ */}
+  <section class="section container">
+    <div class="section-head reveal">
+      <div>
+        <p class="eyebrow">Selected</p>
+        <h2 class="section-title">做过的事</h2>
+      </div>
+      <a class="link-more" href="/projects">
+        全部项目
+        <Icon name="arrowRight" size={13} />
+      </a>
+    </div>
+
+    {
+      featured.length === 0 ? (
+        <div class="empty reveal">
+          <p class="empty__title">项目待补充</p>
+          <p>在 <code>content/projects/</code> 新建 Markdown，或到 <a href="/admin">后台</a> 添加。</p>
+        </div>
+      ) : (
+        <ul class="cards">
+          {featured.map((p) => (
+            <li class="card reveal">
+              <a class="card__link" href={`/projects/${p.id}`}>
+                <Cover seed={p.id} label={p.data.title} src={p.data.cover} ratio="wide" />
+
+                <span class="card__body">
+                  <span class="card__kind">{p.data.kind === 'work' ? '工作' : '个人'}</span>
+                  <h3 class="card__title">{p.data.title}</h3>
+                  {p.data.summary && <span class="card__summary">{p.data.summary}</span>}
+                  {p.data.stack.length > 0 && (
+                    <span class="card__stack">
+                      {p.data.stack.slice(0, 3).map((s) => (
+                        <span class="tag">{s}</span>
+                      ))}
+                    </span>
+                  )}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
+
+  {/* ============ 时间线 ============ */}
+  <section class="section container">
+    <div class="section-head reveal">
+      <div>
+        <p class="eyebrow">Timeline</p>
+        <h2 class="section-title">一路记下来</h2>
+      </div>
+      <p class="meta">{timeline.length} 条</p>
+    </div>
+
+    <Timeline items={timeline} />
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: var(--space-10) var(--space-9);
+    border-bottom: 1px solid var(--line);
+  }
+
+
+  .hero__tagline {
+    margin-top: var(--space-4);
+    font-size: var(--step-2);
+    font-weight: 400;
+    color: var(--fg-2);
+    max-width: 34ch;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .hero__intro {
+    margin-top: var(--space-4);
+    max-width: 52ch;
+    color: var(--fg-2);
+    font-size: var(--step-0);
+    line-height: 1.75;
+  }
+
+  .hero__row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-7);
+    flex-wrap: wrap;
+    margin-top: var(--space-7);
+  }
+
+  .hero__actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  .hero__stats {
+    display: flex;
+    gap: var(--space-6);
+    margin: 0;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .stat__n {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat__l {
+    font-size: 0.6875rem;
+    color: var(--fg-3);
+  }
+
+  /* 状态：一行，不用面板不用边框 */
+  .status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-7);
+    margin: var(--space-7) 0 0;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--line);
+  }
+
+  .status__row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+
+  .status__row dt {
+    font-size: 0.6875rem;
+    color: var(--fg-3);
+    flex: 0 0 auto;
+  }
+
+  .status__row dt::after {
+    content: ':';
+  }
+
+  .status__row dd {
+    margin: 0;
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
+  }
+
+  .status__row dd a {
+    color: var(--fg);
+    border-bottom: 1px solid var(--line-2);
+  }
+
+  .status__row dd a:hover {
+    color: var(--acc);
+    border-color: var(--acc);
+  }
+
+  /* 内容少时统计用一行文字，避免三个「01」显得像占位数据 */
+  .hero__stats-line {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    color: var(--fg-3);
+    letter-spacing: 0.04em;
+  }
+
+  /* ---------- 区块 ---------- */
+  .section {
+    padding-block: var(--space-8);
+  }
+
+  .link-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8125rem;
+    color: var(--fg-2);
+    transition: color var(--dur) var(--ease);
+  }
+
+  .link-more:hover {
+    color: var(--fg);
+  }
+
+  /* 项目卡：hover 仅位移 */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-5);
+    list-style: none;
+  }
+
+  .card {
+    min-width: 0;
+  }
+
+  .card__link {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    transition: transform var(--dur) var(--ease);
+  }
+
+  .card__link:hover {
+    transform: translateY(-2px);
+  }
+
+  .card__link :global(.cover) {
+    border-radius: var(--radius);
+  }
+
+  .card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-3);
+    flex: 1;
+  }
+
+  .card__kind {
+    font-size: 0.6875rem;
+    color: var(--fg-3);
+    letter-spacing: 0.04em;
+  }
+
+  .card__title {
+    font-size: var(--step-1);
+    font-weight: 600;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  .card__link:hover .card__title {
+    color: var(--acc);
+  }
+
+  .card__summary {
+    color: var(--fg-2);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    text-wrap: pretty;
+  }
+
+  .card__stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: auto;
+    padding-top: var(--space-3);
+  }
+
+  @media (max-width: 960px) {
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 720px) {
+    .hero {
+      padding-block: var(--space-9) var(--space-7);
+    }
+
+    .hero__tagline {
+      max-width: none;
+    }
+
+    .hero__row {
+      gap: var(--space-5);
+    }
+
+    .section {
+      padding-block: 40px;
+    }
+
+    .cards {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .status {
+      gap: var(--space-2) var(--space-5);
+    }
+  }
+</style>

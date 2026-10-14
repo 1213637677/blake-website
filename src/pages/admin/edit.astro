@@ -1,0 +1,70 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminEditor from '../../components/AdminEditor.astro';
+import { verifySession } from '../../lib/auth';
+import { ADMIN_COOKIE } from '../../config';
+import { isCollection, readEntry } from '../../lib/store';
+
+export const prerender = false;
+
+if (!verifySession(Astro.cookies.get(ADMIN_COOKIE)?.value)) {
+  return Astro.redirect('/admin/login');
+}
+
+const c = Astro.url.searchParams.get('c') ?? '';
+const s = Astro.url.searchParams.get('s') ?? '';
+
+let entry = null;
+let collection: 'posts' | 'projects' | 'notes' = 'posts';
+let notFound = false;
+
+if (isCollection(c)) {
+  collection = c;
+  entry = await readEntry(c, s);
+  notFound = entry === null;
+}
+
+if (notFound) {
+  return Astro.redirect('/admin?error=' + encodeURIComponent('条目不存在'));
+}
+
+const HREF: Record<string, string> = {
+  posts: '/writing/',
+  projects: '/projects/',
+  notes: '/notes#',
+};
+---
+
+<AdminLayout>
+  <header class="head">
+    <div>
+      <p class="eyebrow">Edit</p>
+      <h1 class="title">{String(entry?.data.title ?? '编辑条目')}</h1>
+    </div>
+    <a class="btn" href={`${HREF[collection]}${s}`} target="_blank" rel="noopener noreferrer">
+      查看页面 ↗
+    </a>
+  </header>
+
+  <AdminEditor collection={collection} entry={entry} />
+</AdminLayout>
+
+<style>
+  .head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-5);
+  }
+
+  .title {
+    font-family: var(--font-serif);
+    font-size: var(--step-3);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-top: var(--space-3);
+    overflow-wrap: anywhere;
+  }
+</style>
