@@ -4,6 +4,7 @@ import AdminEditor from '../../components/AdminEditor.astro';
 import { verifySession } from '../../lib/auth';
 import { ADMIN_COOKIE } from '../../config';
 import { isCollection, readEntry } from '../../lib/store';
+import { url } from '../../lib/url';
 
 export const prerender = false;
 
@@ -41,7 +42,7 @@ const HREF: Record<string, string> = {
       <p class="eyebrow">Edit</p>
       <h1 class="title">{String(entry?.data.title ?? '编辑条目')}</h1>
     </div>
-    <a class="btn" href={`${HREF[collection]}${s}`} target="_blank" rel="noopener noreferrer">
+    <a class="btn" href={url(`${HREF[collection]}${s}`)} target="_blank" rel="noopener noreferrer">
       查看页面 ↗
     </a>
   </header>

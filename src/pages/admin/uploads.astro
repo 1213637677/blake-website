@@ -6,6 +6,7 @@ import { ADMIN_COOKIE } from '../../config';
 import { MAX_UPLOAD } from '../../lib/store';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { url } from '../../lib/url';
 
 export const prerender = false;
 
@@ -67,7 +68,7 @@ const kb = (n: number) => `${Math.round(n / 1024)} KB`;
       <ul class="grid">
         {files.map((f) => (
           <li class="cell">
-            <a class="cell__link" href={`/uploads/${f.name}`} target="_blank" rel="noopener noreferrer">
+            <a class="cell__link" href={url(`/uploads/${f.name}`)} target="_blank" rel="noopener noreferrer">
               <img class="cell__img" src={`/uploads/${f.name}`} alt={f.name} loading="lazy" />
               <span class="cell__name">{f.name}</span>
               <span class="cell__meta meta">{kb(f.size)}</span>

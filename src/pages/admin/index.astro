@@ -84,7 +84,7 @@ const error = Astro.url.searchParams.get('error');
                     <span class="kind">{COLLECTION_LABEL[e.collection]}</span>
                   </td>
                   <td class="cell-title">
-                    <a href={`/admin/edit?c=${e.collection}&s=${e.slug}`}>
+                    <a href={url(`/admin/edit?c=${e.collection}&s=${e.slug}`)}>
                       {String(e.data.title ?? e.slug)}
                     </a>
                     <span class="slug meta">{e.slug}.md</span>
@@ -107,7 +107,7 @@ const error = Astro.url.searchParams.get('error');
                       </a>
                       <a
                         class="icon-btn"
-                        href={`/admin/edit?c=${e.collection}&s=${e.slug}`}
+                        href={url(`/admin/edit?c=${e.collection}&s=${e.slug}`)}
                         aria-label="编辑"
                         data-tip="编辑"
                       >

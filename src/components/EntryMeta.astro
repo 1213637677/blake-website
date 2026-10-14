@@ -1,6 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import { fmtDate, tagHref } from '../lib/format';
+import { url } from '../lib/url';
 
 interface Props {
   date: Date;
@@ -24,7 +25,7 @@ const { date, updated, tags, minutes, extra, draft } = Astro.props;
     tags.length > 0 && (
       <span class="entry-meta__tags">
         {tags.map((t) => (
-          <a class="tag" href={tagHref(t)}>#{t}</a>
+          <a class="tag" href={url(tagHref(t))}>#{t}</a>
         ))}
       </span>
     )

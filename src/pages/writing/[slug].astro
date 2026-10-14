@@ -71,7 +71,7 @@ const KIND_LABEL: Record<string, string> = {
     <nav class="pager" aria-label="上下篇">
       {
         prev ? (
-          <a class="pager__item" href={`/writing/${prev.id}`} rel="prev">
+          <a class="pager__item" href={url(`/writing/${prev.id}`)} rel="prev">
             <span class="meta"><Icon name="arrowLeft" size={14} /> 上一篇</span>
             <span class="pager__title">{prev.data.title}</span>
           </a>
@@ -81,7 +81,7 @@ const KIND_LABEL: Record<string, string> = {
       }
       {
         next ? (
-          <a class="pager__item pager__item--next" href={`/writing/${next.id}`} rel="next">
+          <a class="pager__item pager__item--next" href={url(`/writing/${next.id}`)} rel="next">
             <span class="meta">下一篇 <Icon name="arrowRight" size={14} /></span>
             <span class="pager__title">{next.data.title}</span>
           </a>

@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getAllTags } from '../../lib/entries';
 import { tagHref } from '../../lib/format';
+import { url } from '../../lib/url';
 
 const tags = await getAllTags();
 const max = tags[0]?.count ?? 1;
@@ -25,7 +26,7 @@ const max = tags[0]?.count ?? 1;
         <ul class="cloud">
           {tags.map((t, i) => (
             <li>
-              <a class="cloud__item" href={tagHref(t.tag)} style={`--i:${i}`}>
+              <a class="cloud__item" href={url(tagHref(t.tag))} style={`--i:${i}`}>
                 <span class="cloud__name">#{t.tag}</span>
                 <span class="cloud__bar" aria-hidden="true">
                   <span style={`width:${Math.max(10, (t.count / max) * 100)}%`}></span>

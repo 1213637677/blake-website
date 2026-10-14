@@ -129,7 +129,7 @@ const specs = [
     <nav class="pager" aria-label="上一个 / 下一个项目">
       {
         prev ? (
-          <a class="pager__item" href={`/projects/${prev.id}`} rel="prev">
+          <a class="pager__item" href={url(`/projects/${prev.id}`)} rel="prev">
             <span class="meta"><Icon name="arrowLeft" size={14} /> 上一个</span>
             <span class="pager__title">{prev.data.title}</span>
           </a>
@@ -139,7 +139,7 @@ const specs = [
       }
       {
         next ? (
-          <a class="pager__item pager__item--next" href={`/projects/${next.id}`} rel="next">
+          <a class="pager__item pager__item--next" href={url(`/projects/${next.id}`)} rel="next">
             <span class="meta">下一个 <Icon name="arrowRight" size={14} /></span>
             <span class="pager__title">{next.data.title}</span>
           </a>

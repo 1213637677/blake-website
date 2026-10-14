@@ -10,6 +10,12 @@ const links = [
   ...(site.repo ? [{ label: '源码', href: site.repo, icon: 'github' }] : []),
   ...(site.email ? [{ label: '邮件', href: `mailto:${site.email}`, icon: 'mail' }] : []),
 ];
+
+// 站内路径补 base 前缀（外链与 mailto 保持原样）
+const resolved = links.map(function (l) {
+  const external = l.href.startsWith('http') || l.href.startsWith('mailto:');
+  return Object.assign({}, l, { href: external ? l.href : url(l.href) });
+});
 ---
 
 <footer class="footer">
@@ -28,7 +34,7 @@ const links = [
         <p class="eyebrow eyebrow--dim">connect</p>
         <ul class="footer__links">
           {
-            links.map((l) => (
+            resolved.map((l) => (
               <li>
                 <a href={l.href} rel="noopener noreferrer" target={l.href.startsWith('http') ? '_blank' : undefined}>
                   <Icon name={l.icon} size={13} />

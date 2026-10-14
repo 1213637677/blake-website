@@ -89,7 +89,7 @@ const items = posts.map((p) => ({ post: p, minutes: readingTime(p.body ?? '') })
           <p class="eyebrow">Tags</p>
           <ul class="tag-list">
             {tags.map((t) => (
-              <li><a class="tag" href={tagHref(t)}>#{t}</a></li>
+              <li><a class="tag" href={url(tagHref(t))}>#{t}</a></li>
             ))}
           </ul>
         </nav>

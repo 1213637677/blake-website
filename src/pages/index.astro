@@ -53,7 +53,7 @@ const stats = [
       <dl class="status">
         {
           [
-            activeProject && { k: '在做', v: activeProject.data.title, href: `/projects/${activeProject.id}` },
+            activeProject && { k: '在做', v: activeProject.data.title, href: url(`/projects/${activeProject.id}`) },
             latestNote && { k: '最新', v: latestNote.data.title, href: `/notes#${latestNote.id}` },
             site.now && { k: '近况', v: site.now },
             timeline[0] && { k: '更新', v: fmtDate(timeline[0].date) },
@@ -93,7 +93,7 @@ const stats = [
         <ul class="cards">
           {featured.map((p) => (
             <li class="card reveal">
-              <a class="card__link" href={`/projects/${p.id}`}>
+              <a class="card__link" href={url(`/projects/${p.id}`)}>
                 <Cover seed={p.id} label={p.data.title} src={p.data.cover} ratio="wide" />
 
                 <span class="card__body">
