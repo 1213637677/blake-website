@@ -17,9 +17,24 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      has_pages: ${{ steps.check.outputs.has_pages }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check Pages availability
+        id: check
+        run: |
+          # 私有仓库 + 免费账号不支持 Pages，此时跳过部署步骤，仅做构建校验
+          if gh api "repos/${{ github.repository }}/pages" >/dev/null 2>&1; then
+            echo "has_pages=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_pages=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GitHub Pages 未启用，仅做构建校验（私有仓库需要付费计划，或将仓库设为 public）"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -43,6 +58,7 @@ jobs:
 
   deploy:
     needs: build
+    if: needs.build.outputs.has_pages == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
