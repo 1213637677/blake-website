@@ -2,6 +2,7 @@
 import Icon from './Icon.astro';
 import type { CollectionName } from '../lib/store';
 import type { EntryFile } from '../lib/store';
+import { url } from '../lib/url';
 
 interface Props {
   collection: CollectionName;
@@ -219,7 +220,7 @@ const COLLECTIONS: { value: CollectionName; label: string }[] = [
       <Icon name="save" size={16} />
       保存
     </button>
-    <a class="btn" href="/admin">取消</a>
+    <a class="btn" href={url("/admin")}>取消</a>
     {
       !isNew && (
         <button

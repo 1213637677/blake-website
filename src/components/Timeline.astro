@@ -43,7 +43,7 @@ const NODE_SIZE: Record<string, string> = {
     items.length === 0 && (
       <div class="empty">
         <p class="empty__title">还没有记录</p>
-        <p>写下第一篇，或到 <a href="/admin">后台</a> 新建条目。</p>
+        <p>写下第一篇，或到 <a href={url("/admin")}>后台</a> 新建条目。</p>
       </div>
     )
   }

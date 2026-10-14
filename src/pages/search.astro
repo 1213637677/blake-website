@@ -31,6 +31,8 @@ import Icon from '../components/Icon.astro';
 </BaseLayout>
 
 <script>
+  const BASE = '${import.meta.env.BASE_URL}';
+
   type Doc = {
     kind: string;
     title: string;
@@ -57,7 +59,7 @@ import Icon from '../components/Icon.astro';
 
   async function load() {
     if (loaded) return;
-    const res = await fetch('/search-index.json');
+    const res = await fetch(`${BASE}search-index.json`);
     const data = await res.json();
     docs = data.docs ?? [];
     loaded = true;
@@ -121,7 +123,7 @@ import Icon from '../components/Icon.astro';
       .map(({ d }) => {
         const shown = d.text.toLowerCase().includes(query) ? snippet(d.text, query) : highlight(d.summary, query);
         return `<li class="hit">
-          <a class="hit__link" href="${esc(d.href)}">
+          <a class="hit__link" href="${esc(BASE + String(d.href).replace(/^\//, ''))}">
             <span class="hit__meta">
               <span class="hit__kind k-${d.kind}">${KIND_LABEL[d.kind] ?? d.kind}</span>
               <span>${dateStr(d.date)}</span>

@@ -4,6 +4,7 @@ import FilterBar from '../../components/FilterBar.astro';
 import { render } from 'astro:content';
 import { getNotes } from '../../lib/entries';
 import { fmtDate, year as yearOf } from '../../lib/format';
+import { url } from '../../lib/url';
 
 const notes = await getNotes();
 const tags = [...new Set(notes.flatMap((n) => n.data.tags))].sort();
@@ -36,7 +37,7 @@ for (const item of rendered) {
       notes.length === 0 ? (
         <div class="empty">
           <p class="empty__title">还没有笔记</p>
-          <p>在 <code>content/notes/</code> 新建 Markdown，或到 <a href="/admin">后台</a> 记一条。</p>
+          <p>在 <code>content/notes/</code> 新建 Markdown，或到 <a href={url("/admin")}>后台</a> 记一条。</p>
         </div>
       ) : (
         <div class="wall">

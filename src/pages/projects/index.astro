@@ -43,7 +43,7 @@ const cells = projects.map((p, i) => ({ p, big: i % 3 === 0 }));
       projects.length === 0 ? (
         <div class="empty">
           <p class="empty__title">还没有项目</p>
-          <p>在 <code>content/projects/</code> 新建 Markdown，或到 <a href="/admin">后台</a> 添加。</p>
+          <p>在 <code>content/projects/</code> 新建 Markdown，或到 <a href={url("/admin")}>后台</a> 添加。</p>
         </div>
       ) : (
     <h2 class="visually-hidden">全部项目</h2>

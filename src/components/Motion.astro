@@ -75,6 +75,9 @@
   const cmdInput = cmdRoot?.querySelector<HTMLInputElement>('.cmd__input');
   const cmdList = cmdRoot?.querySelector<HTMLUListElement>('[data-cmd-list]');
 
+  const BASE = '${import.meta.env.BASE_URL}';
+  const withBase = (h: string) => BASE + String(h).replace(/^\//, '');
+
   type Doc = { title: string; href: string; kind: string; date: string; tags: string[] };
   let docs: Doc[] = [];
   let idxLoaded = false;
@@ -86,7 +89,7 @@
       const json = await res.json();
       docs = (json.docs ?? []).map((d: Doc) => ({
         title: d.title,
-        href: d.href,
+        href: withBase(d.href),
         kind: d.kind,
         date: d.date,
         tags: d.tags ?? [],
@@ -98,12 +101,12 @@
   }
 
   const STATIC = [
-    { title: '首页', href: '/', tag: '页面' },
-    { title: '项目', href: '/projects', tag: '页面' },
-    { title: '文章', href: '/writing', tag: '页面' },
-    { title: '笔记', href: '/notes', tag: '页面' },
-    { title: '标签', href: '/tags', tag: '页面' },
-    { title: '搜索', href: '/search', tag: '页面' },
+    { title: '首页', href: withBase('/'), tag: '页面' },
+    { title: '项目', href: withBase('/projects'), tag: '页面' },
+    { title: '文章', href: withBase('/writing'), tag: '页面' },
+    { title: '笔记', href: withBase('/notes'), tag: '页面' },
+    { title: '标签', href: withBase('/tags'), tag: '页面' },
+    { title: '搜索', href: withBase('/search'), tag: '页面' },
     { title: '关于', href: '/about', tag: '页面' },
   ];
 

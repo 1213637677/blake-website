@@ -3,7 +3,9 @@ import { nav, site } from '../config';
 import Icon from './Icon.astro';
 import { url } from '../lib/url';
 
-const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
+// 去掉 base 前缀后比较，避免子路径部署时高亮失效
+const path = (Astro.url.pathname.replace(/\/+$/, '') || '/').replace(base, '') || '/';
 
 function active(href: string) {
   if (href === '/') return path === '/';
@@ -20,7 +22,7 @@ function active(href: string) {
     <nav class="nav" aria-label="主导航">
       {
         nav.map((item) => (
-          <a class:list={['nav__link', { 'is-active': active(item.href) }]} href={item.href}>
+          <a class:list={['nav__link', { 'is-active': active(item.href) }]} href={url(item.href)}>
             {item.label}
           </a>
         ))

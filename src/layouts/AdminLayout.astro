@@ -3,6 +3,7 @@ import '../styles/global.css';
 import { adminEnabled, verifySession } from '../lib/auth';
 import { ADMIN_COOKIE } from '../config';
 import Icon from '../components/Icon.astro';
+import { url } from '../lib/url';
 
 const cookie = Astro.cookies.get(ADMIN_COOKIE)?.value;
 const authed = verifySession(cookie);
@@ -23,12 +24,12 @@ const links = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
     <title>后台 · Blake</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href={url("/favicon.svg")} type="image/svg+xml" />
   </head>
   <body>
     <header class="bar">
       <div class="bar__inner">
-        <a class="bar__brand" href="/admin">
+        <a class="bar__brand" href={url("/admin")}>
           <Icon name="terminal" size={15} />
           后台
         </a>
@@ -44,7 +45,7 @@ const links = [
           )
         }
         <div class="bar__right">
-          <a class="bar__link" href="/" target="_blank" rel="noopener noreferrer">看站点 ↗</a>
+          <a class="bar__link" href={url("/")} target="_blank" rel="noopener noreferrer">看站点 ↗</a>
           {
             authed && (
               <form method="post" action="/admin/logout">
