@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Icon from '../components/Icon.astro';
+import { url } from '../lib/url';
 ---
 
 <BaseLayout title="页面不存在" description="404">
@@ -10,11 +11,11 @@ import Icon from '../components/Icon.astro';
     <p class="desc">可能是链接写错了，或者这篇还没发出去。</p>
 
     <div class="actions">
-      <a class="btn btn--primary" href="/">
+      <a class="btn btn--primary" href={url("/")}>
         回到首页
         <Icon name="arrowRight" size={16} />
       </a>
-      <a class="btn" href="/search">搜索一下</a>
+      <a class="btn" href={url("/search")}>搜索一下</a>
     </div>
   </div>
 </BaseLayout>

@@ -7,6 +7,7 @@ import Cover from '../../components/Cover.astro';
 import Icon from '../../components/Icon.astro';
 import '../../styles/prose.css';
 import { getPosts, readingTime } from '../../lib/entries';
+import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
   const posts = await getPosts();
@@ -36,7 +37,7 @@ const KIND_LABEL: Record<string, string> = {
 >
   <article class="container article">
     <nav class="crumb" aria-label="面包屑">
-      <a href="/writing">写下来</a>
+      <a href={url("/writing")}>写下来</a>
       <span aria-hidden="true">/</span>
       <span>{KIND_LABEL[post.data.kind] ?? '随笔'}</span>
     </nav>
@@ -61,7 +62,7 @@ const KIND_LABEL: Record<string, string> = {
     <CodeEnhance />
 
     <p class="back">
-      <a href="/writing">
+      <a href={url("/writing")}>
         <Icon name="arrowLeft" size={13} />
         返回文章列表
       </a>

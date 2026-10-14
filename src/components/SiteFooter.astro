@@ -1,6 +1,7 @@
 ---
 import { site } from '../config';
 import Icon from './Icon.astro';
+import { url } from '../lib/url';
 
 const year = new Date().getUTCFullYear();
 
@@ -42,9 +43,9 @@ const links = [
       <div class="footer__col">
         <p class="eyebrow eyebrow--dim">index</p>
         <ul class="footer__links">
-          <li><a href="/tags">标签</a></li>
-          <li><a href="/search">搜索</a></li>
-          <li><a href="/admin">后台</a></li>
+          <li><a href={url("/tags")}>标签</a></li>
+          <li><a href={url("/search")}>搜索</a></li>
+          <li><a href={url("/admin")}>后台</a></li>
         </ul>
       </div>
     </div>

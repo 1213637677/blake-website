@@ -6,6 +6,7 @@ import Icon from '../components/Icon.astro';
 import { site } from '../config';
 import { getTimeline, getProjects, getNotes, getPosts } from '../lib/entries';
 import { fmtDate } from '../lib/format';
+import { url } from '../lib/url';
 
 const timeline = await getTimeline();
 const projects = await getProjects();
@@ -36,11 +37,11 @@ const stats = [
 
       <div class="hero__row">
         <div class="hero__actions">
-          <a class="btn btn--primary" href="/projects">
+          <a class="btn btn--primary" href={url("/projects")}>
             浏览项目
             <Icon name="arrowRight" size={14} />
           </a>
-          <a class="btn" href="/writing">读文章</a>
+          <a class="btn" href={url("/writing")}>读文章</a>
         </div>
 
         <p class="hero__stats-line">
@@ -76,7 +77,7 @@ const stats = [
         <p class="eyebrow">Selected</p>
         <h2 class="section-title">做过的事</h2>
       </div>
-      <a class="link-more" href="/projects">
+      <a class="link-more" href={url("/projects")}>
         全部项目
         <Icon name="arrowRight" size={13} />
       </a>

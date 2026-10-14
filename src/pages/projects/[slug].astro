@@ -8,6 +8,7 @@ import Icon from '../../components/Icon.astro';
 import '../../styles/prose.css';
 import { getProjects } from '../../lib/entries';
 import { fmtDate } from '../../lib/format';
+import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
   const projects = await getProjects();
@@ -50,7 +51,7 @@ const specs = [
 >
   <article class="container project">
     <nav class="crumb" aria-label="面包屑">
-      <a href="/projects">做过的事</a>
+      <a href={url("/projects")}>做过的事</a>
       <span aria-hidden="true">/</span>
       <span>{project.data.kind === 'work' ? '工作项目' : '个人项目'}</span>
     </nav>
@@ -119,7 +120,7 @@ const specs = [
     />
 
     <p class="back">
-      <a href="/projects">
+      <a href={url("/projects")}>
         <Icon name="arrowLeft" size={13} />
         返回项目列表
       </a>

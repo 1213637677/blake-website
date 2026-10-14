@@ -3,9 +3,16 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import node from '@astrojs/node';
 import sitemap from '@astrojs/sitemap';
+import { rehypeBaseUrl } from './src/lib/rehype-base-url.mjs';
+
+// GitHub Pages 部署到仓库子路径时设置 BASE_PATH=/<repo>
+// 本地开发不设置，走根路径
+const site = process.env.SITE_URL || 'https://blake.example.com';
+const base = process.env.BASE_PATH || '/';
 
 export default defineConfig({
-  site: 'https://blake.example.com',
+  site,
+  base,
   output: 'static',
   adapter: node({ mode: 'standalone' }),
   integrations: [mdx(), sitemap()],
@@ -23,5 +30,6 @@ export default defineConfig({
       // 长代码行与宽流程图改为容器内横向滚动。
       wrap: false,
     },
+    rehypePlugins: [rehypeBaseUrl],
   },
 });

@@ -1,6 +1,7 @@
 ---
 import { nav, site } from '../config';
 import Icon from './Icon.astro';
+import { url } from '../lib/url';
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 
@@ -12,7 +13,7 @@ function active(href: string) {
 
 <header class="header">
   <div class="container header__inner">
-    <a class="brand" href="/">
+    <a class="brand" href={url("/")}>
       <span class="brand__name">{site.name}</span>
     </a>
 

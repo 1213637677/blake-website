@@ -1,5 +1,6 @@
 ---
 import Icon from './Icon.astro';
+import { url } from '../lib/url';
 import { fmtDate, year as yearOf } from '../lib/format';
 import { kindLabel, type Unified } from '../lib/entries';
 
@@ -61,7 +62,7 @@ const NODE_SIZE: Record<string, string> = {
               <li class:list={['node', `node--${NODE_SIZE[it.kind]}`]} data-kind={it.kind}>
                 <span class="node__dot" aria-hidden="true"></span>
 
-                <a class="node__card reveal" href={it.href}>
+                <a class="node__card reveal" href={url(it.href)}>
                   <span class="node__meta">
                     <span class:list={['node__kind', `k-${it.kind}`]}>{kindLabel(it.kind)}</span>
                     <time datetime={it.date.toISOString()}>{fmtDate(it.date)}</time>

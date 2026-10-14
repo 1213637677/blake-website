@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Timeline from '../../components/Timeline.astro';
 import { getTimeline, type Unified } from '../../lib/entries';
+import { url } from '../../lib/url';
 
 export async function getStaticPaths() {
   const items = await getTimeline();
@@ -22,7 +23,7 @@ const { tag, items } = Astro.props as { tag: string; items: Unified[] };
       <h1 class="head__title">#{tag}</h1>
       <p class="head__meta">
         <span class="tag tag--hot">{items.length} 条</span>
-        <a class="link" href="/tags">全部标签</a>
+        <a class="link" href={url("/tags")}>全部标签</a>
       </p>
     </header>
 

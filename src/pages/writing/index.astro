@@ -5,6 +5,7 @@ import Cover from '../../components/Cover.astro';
 import Icon from '../../components/Icon.astro';
 import { getPosts, readingTime } from '../../lib/entries';
 import { fmtDate, tagHref } from '../../lib/format';
+import { url } from '../../lib/url';
 
 const posts = await getPosts();
 const tags = [...new Set(posts.flatMap((p) => p.data.tags))].sort();
@@ -46,7 +47,7 @@ const items = posts.map((p) => ({ post: p, minutes: readingTime(p.body ?? '') })
               data-search={`${post.data.title} ${post.data.summary} ${post.data.tags.join(' ')}`}
               data-tags={post.data.tags.join('|')}
             >
-              <a class="card__link" href={`/writing/${post.id}`}>
+              <a class="card__link" href={url(`/writing/${post.id}`)}>
                 <Cover seed={post.id} label={post.data.title} src={post.data.cover} ratio="wide" />
 
                 <div class="card__body">
