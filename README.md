@@ -2,6 +2,12 @@
 
 记录工作项目经历、学习过程与感悟的个人站点。Astro 静态构建，内容源是 Git 里的 Markdown，附带一个写回同一批文件的后台。
 
+## 在线地址
+
+https://1213637677.github.io/blake-website/
+
+推送到 `main` 分支后 GitHub Actions 会自动构建并部署到 Pages。
+
 ## 快速开始
 
 ```bash
@@ -9,7 +15,20 @@ npm install
 npm run dev        # http://localhost:4321
 npm run build      # 产物在 dist/
 npm run preview
+
+# 构建 Pages 版本（带 /blake-website 子路径）
+SITE_URL=https://1213637677.github.io BASE_PATH=/blake-website npm run build
 ```
+
+## 后台说明
+
+`/admin` 需要 Node 运行时。**GitHub Pages 只托管静态文件，线上后台不可用**。本地开发时带口令启动：
+
+```bash
+ADMIN_PASSWORD=你的口令 npm run dev
+```
+
+访问 `/admin` 登录后，可新建/编辑/删除文章、项目、笔记（直接写回 `content/` 文件）。
 
 ## 写作流程
 
