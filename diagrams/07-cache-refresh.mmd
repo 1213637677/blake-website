@@ -1,53 +1,50 @@
 flowchart TB
-    OPS[运营发布] --> WRITE[写库 并 发布刷新消息]
-    WRITE --> PUB[Redis 广播 带 CacheName]
-    PUB --> I1[实例 1]
-    PUB --> I2[实例 2]
-    PUB --> I3[实例 N]
-    subgraph S1[实例 1 内部]
+    subgraph OBJ[ObjectCache 整对象一份]
         direction TB
-        Q1[等待队列 合并重复消息]
-        Q1 --> D1[随机延迟 0 至 30 秒]
-        D1 --> R1[回源数据库 并 重载]
+        OG[Get] --> OL{atomic.Load 有值?}
+        OL -->|有| OR[直接返回 无锁]
+        OL -->|无| OK[加锁 再读一次]
+        OK --> OL2{仍无值?}
+        OL2 -->|有| OR
+        OL2 -->|无| OF[getter 全量加载]
+        OF --> OS[atomic.Store 整对象替换]
+        OS --> OR
+        OF -.->|失败| OLD[保留旧值]
+        OT[定时 Reload] --> OF
     end
-    subgraph S2[实例 2 内部]
+    subgraph KV[ KVCache 分桶键值 加 单飞]
         direction TB
-        Q2[等待队列 合并重复消息]
-        Q2 --> D2[随机延迟 0 至 30 秒]
-        D2 --> R2[回源数据库 并 重载]
+        KG[Fetch key] --> KH{命中且未过期?}
+        KH -->|是| KR[直接返回]
+        KH -->|否| KS[singleflight 按 key 合并]
+        KS --> KF[getter 单键回源]
+        KF --> KT[按 getter 返回 TTL 写回]
+        KT --> KR
+        KF -.->|失败| KE[向上抛错 不保留旧值]
+        KM[MultiFetch 批量] --> KB[收集未命中 key 一次查回]
+        KB --> KT
     end
-    subgraph S3[实例 N 内部]
-        direction TB
-        Q3[等待队列 合并重复消息]
-        Q3 --> D3[随机延迟 0 至 30 秒]
-        D3 --> R3[回源数据库 并 重载]
-    end
-    I1 --> Q1
-    I2 --> Q2
-    I3 --> Q3
-    R1 --> C1[(本地缓存已更新)]
-    R2 --> C2[(本地缓存已更新)]
-    R3 --> C3[(本地缓存已更新)]
-    PUB -.-> KV[键值缓存 收到 key 直接删除 惰性回源]
-    style OPS fill:#263238,stroke:#4c8dff,color:#ededf0
-    style WRITE fill:#263238,stroke:#4c8dff,color:#ededf0
-    style PUB fill:#33281a,stroke:#ffb020,color:#ededf0
-    style I1 fill:#263238,stroke:#4c8dff,color:#ededf0
-    style I2 fill:#263238,stroke:#4c8dff,color:#ededf0
-    style I3 fill:#263238,stroke:#4c8dff,color:#ededf0
-    style S1 fill:#16161a,stroke:#2a2a30,color:#8b8b94
-    style S2 fill:#16161a,stroke:#2a2a30,color:#8b8b94
-    style S3 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    Q1{键空间封闭 能全量加载?} -->|是| OBJ
+    Q1 -->|否| KVV[KVCache]
+    style OBJ fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style KV fill:#16161a,stroke:#2a2a30,color:#8b8b94
     style Q1 fill:#33281a,stroke:#ffb020,color:#ededf0
-    style Q2 fill:#33281a,stroke:#ffb020,color:#ededf0
-    style Q3 fill:#33281a,stroke:#ffb020,color:#ededf0
-    style D1 fill:#33281a,stroke:#ffb020,color:#ededf0
-    style D2 fill:#33281a,stroke:#ffb020,color:#ededf0
-    style D3 fill:#33281a,stroke:#ffb020,color:#ededf0
-    style R1 fill:#1b3a2f,stroke:#00e599,color:#ededf0
-    style R2 fill:#1b3a2f,stroke:#00e599,color:#ededf0
-    style R3 fill:#1b3a2f,stroke:#00e599,color:#ededf0
-    style C1 fill:#1b3a2f,stroke:#00e599,color:#ededf0
-    style C2 fill:#1b3a2f,stroke:#00e599,color:#ededf0
-    style C3 fill:#1b3a2f,stroke:#00e599,color:#ededf0
-    style KV fill:#263238,stroke:#4c8dff,color:#ededf0
+    style OG fill:#263238,stroke:#4c8dff,color:#ededf0
+    style OL fill:#33281a,stroke:#ffb020,color:#ededf0
+    style OL2 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style OK fill:#263238,stroke:#4c8dff,color:#ededf0
+    style OF fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style OS fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style OR fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style OLD fill:#263238,stroke:#4c8dff,color:#ededf0
+    style OT fill:#263238,stroke:#4c8dff,color:#ededf0
+    style KG fill:#263238,stroke:#4c8dff,color:#ededf0
+    style KH fill:#33281a,stroke:#ffb020,color:#ededf0
+    style KR fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style KS fill:#33281a,stroke:#ffb020,color:#ededf0
+    style KF fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style KT fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style KE fill:#263238,stroke:#4c8dff,color:#ededf0
+    style KM fill:#263238,stroke:#4c8dff,color:#ededf0
+    style KB fill:#33281a,stroke:#ffb020,color:#ededf0
+    style KVV fill:#263238,stroke:#4c8dff,color:#ededf0
