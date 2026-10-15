@@ -1,0 +1,18 @@
+flowchart LR
+    T0["视频号发布 submit_time"] --> T1["客户端上报 fileHash 进入延迟队列"]
+    T1 --> T2["绑定 objectID 进入审核"]
+    T2 --> T3["运营审核通过 finish_time = submit_time + 7 天"]
+    T3 --> T4["冻结期结束 复查视频状态"]
+    T4 -->|正常| T5["Accounting 写入金额"]
+    T4 -->|删除/私密/违规| T6["撤销收益 回到可领取或过期"]
+    T5 --> T7["次月 8 号 按 submit_time 归月出账"]
+    T7 --> T8["次月 10 号 账单对创作者可见"]
+    style T0 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style T1 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style T2 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style T3 fill:#2a2438,stroke:#a78bfa,color:#ededf0
+    style T4 fill:#2a2438,stroke:#a78bfa,color:#ededf0
+    style T5 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style T6 fill:#3a2222,stroke:#ff6b6b,color:#ededf0
+    style T7 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style T8 fill:#1b3a2f,stroke:#00e599,color:#ededf0

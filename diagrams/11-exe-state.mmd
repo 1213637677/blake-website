@@ -1,0 +1,34 @@
+flowchart TB
+    W["1 Working 执行中"] -->|Submit 提交| S["2 Submitted 已提交 待绑定"]
+    S -->|ConfirmVideo 绑定成功| AU["3 Auditing 审核中"]
+    S -.->|扫描补偿或人工绑定| AU
+    AU -->|Approve 通过| AP["4 Approved 冻结期 7 天"]
+    AU -->|Deny 拒绝 未达上限| D["7 Denied 可修改重提"]
+    AU -->|FinalDeny 拒绝满 2 次| F["8 Failed 彻底失败"]
+    AU -->|ExpireDeny 超期后被拒| EX["9 Expired 过期"]
+    D -->|Submit 重新提交| S
+    AP -->|Account 复查通过| AC["6 Accounting 待出账"]
+    AP -->|FreezeDeny 删除/私密/违规| CHK{"活动是否已过期"}
+    W -->|Abandon 放弃| CHK
+    D -->|Abandon 放弃| CHK
+    S -->|MissingVideo 未发到视频号| CHK
+    S -->|Abort 后台中止| EX
+    CHK -->|未过期| AP2["10 Appliable 可重新领取"]
+    CHK -->|已过期| EX
+    AP2 -->|Claim 复用同一条记录| W
+    W -->|Expire 定时批量刷| EX
+    D -->|Expire 定时批量刷| EX
+    AC -->|每月 8 号出账| B["Bill 月度账单 次月 10 号可见"]
+    B -->|Settle 打款完成| BS["Bill Settled"]
+    style W fill:#263238,stroke:#4c8dff,color:#ededf0
+    style S fill:#33281a,stroke:#ffb020,color:#ededf0
+    style AU fill:#33281a,stroke:#ffb020,color:#ededf0
+    style AP fill:#2a2438,stroke:#a78bfa,color:#ededf0
+    style AC fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style D fill:#3a2222,stroke:#ff6b6b,color:#ededf0
+    style F fill:#3a2222,stroke:#ff6b6b,color:#ededf0
+    style EX fill:#26262c,stroke:#6b6b75,color:#ededf0
+    style AP2 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style CHK fill:#16161a,stroke:#4c8dff,color:#ededf0
+    style B fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style BS fill:#1b3a2f,stroke:#00e599,color:#ededf0
