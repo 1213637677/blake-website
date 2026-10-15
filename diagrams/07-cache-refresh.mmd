@@ -1,28 +1,53 @@
 flowchart TB
-    OPS[运营发布] --> DB[(数据库)]
-    DB --> PUB[发布刷新消息]
-    subgraph N[多实例收到广播]
-        direction LR
-        N1[实例 1] --> Q[等待队列]
-        N2[实例 2] --> Q
-        N3[实例 N] --> Q
+    OPS[运营发布] --> WRITE[写库 并 发布刷新消息]
+    WRITE --> PUB[Redis 广播 带 CacheName]
+    PUB --> I1[实例 1]
+    PUB --> I2[实例 2]
+    PUB --> I3[实例 N]
+    subgraph S1[实例 1 内部]
+        direction TB
+        Q1[等待队列 合并重复消息]
+        Q1 --> D1[随机延迟 0 至 30 秒]
+        D1 --> R1[回源数据库 并 重载]
     end
-    PUB --> N
-    Q --> HEAD{是队首?}
-    HEAD -->|是| RELOAD[真正回源数据库]
-    HEAD -->|否| SKIP[直接返回 不重复回源]
-    RELOAD --> DELAY[随机延迟 削峰]
-    DELAY --> CACHE[(本地缓存已更新)]
+    subgraph S2[实例 2 内部]
+        direction TB
+        Q2[等待队列 合并重复消息]
+        Q2 --> D2[随机延迟 0 至 30 秒]
+        D2 --> R2[回源数据库 并 重载]
+    end
+    subgraph S3[实例 N 内部]
+        direction TB
+        Q3[等待队列 合并重复消息]
+        Q3 --> D3[随机延迟 0 至 30 秒]
+        D3 --> R3[回源数据库 并 重载]
+    end
+    I1 --> Q1
+    I2 --> Q2
+    I3 --> Q3
+    R1 --> C1[(本地缓存已更新)]
+    R2 --> C2[(本地缓存已更新)]
+    R3 --> C3[(本地缓存已更新)]
+    PUB -.-> KV[键值缓存 收到 key 直接删除 惰性回源]
     style OPS fill:#263238,stroke:#4c8dff,color:#ededf0
-    style DB fill:#263238,stroke:#4c8dff,color:#ededf0
+    style WRITE fill:#263238,stroke:#4c8dff,color:#ededf0
     style PUB fill:#33281a,stroke:#ffb020,color:#ededf0
-    style N fill:#16161a,stroke:#2a2a30,color:#8b8b94
-    style N1 fill:#263238,stroke:#4c8dff,color:#ededf0
-    style N2 fill:#263238,stroke:#4c8dff,color:#ededf0
-    style N3 fill:#263238,stroke:#4c8dff,color:#ededf0
-    style Q fill:#33281a,stroke:#ffb020,color:#ededf0
-    style HEAD fill:#33281a,stroke:#ffb020,color:#ededf0
-    style RELOAD fill:#1b3a2f,stroke:#00e599,color:#ededf0
-    style SKIP fill:#263238,stroke:#4c8dff,color:#ededf0
-    style DELAY fill:#33281a,stroke:#ffb020,color:#ededf0
-    style CACHE fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style I1 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style I2 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style I3 fill:#263238,stroke:#4c8dff,color:#ededf0
+    style S1 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style S2 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style S3 fill:#16161a,stroke:#2a2a30,color:#8b8b94
+    style Q1 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style Q2 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style Q3 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style D1 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style D2 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style D3 fill:#33281a,stroke:#ffb020,color:#ededf0
+    style R1 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style R2 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style R3 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style C1 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style C2 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style C3 fill:#1b3a2f,stroke:#00e599,color:#ededf0
+    style KV fill:#263238,stroke:#4c8dff,color:#ededf0
