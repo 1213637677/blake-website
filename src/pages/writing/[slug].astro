@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import EntryMeta from '../../components/EntryMeta.astro';
+import Toc from '../../components/Toc.astro';
 import CodeEnhance from '../../components/CodeEnhance.astro';
 import Cover from '../../components/Cover.astro';
 import Icon from '../../components/Icon.astro';
@@ -18,7 +19,7 @@ export async function getStaticPaths() {
 }
 
 const { post, prev, next } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 const minutes = readingTime(post.body ?? '');
 
 const KIND_LABEL: Record<string, string> = {
@@ -53,10 +54,20 @@ const KIND_LABEL: Record<string, string> = {
       draft={post.data.draft}
     />
 
+    <div class="article__grid">
+    <div class="article__main">
+
     {post.data.cover && <Cover seed={post.id} label={post.data.title} src={post.data.cover} ratio="wide" />}
 
     <div class="prose article__body">
       <Content />
+    </div>
+
+    </div>
+
+    <aside class="article__aside">
+      <Toc headings={headings} />
+    </aside>
     </div>
 
     <CodeEnhance />
@@ -96,6 +107,33 @@ const KIND_LABEL: Record<string, string> = {
 <style>
   .article {
     padding-block: var(--space-8) var(--space-9);
+  }
+
+  .article__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 232px;
+    gap: var(--space-8);
+    align-items: start;
+  }
+
+  .article__main {
+    min-width: 0;
+  }
+
+  .article__aside {
+    position: sticky;
+    top: calc(var(--nav-h) + var(--space-5));
+  }
+
+  @media (max-width: 1080px) {
+    .article__grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .article__aside {
+      display: none;
+    }
   }
 
   .crumb {

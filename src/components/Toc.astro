@@ -1,0 +1,131 @@
+---
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+}
+
+const { headings } = Astro.props;
+
+// 只收 h2 / h3：h1 是页面标题，h4 以下太碎
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  items.length > 1 && (
+    <nav class="toc" aria-label="目录">
+      <p class="toc__title eyebrow">本页内容</p>
+      <ul class="toc__list">
+        {items.map((h) => (
+          <li class:list={['toc__item', { 'toc__item--sub': h.depth === 3 }]}>
+            <a href={`#${h.slug}`} data-toc-link={h.slug}>{h.text}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<style>
+  .toc {
+    position: sticky;
+    top: calc(var(--nav-h) + var(--space-5));
+    max-height: calc(100vh - var(--nav-h) - var(--space-8));
+    overflow-y: auto;
+    padding-left: var(--space-4);
+    border-left: 1px solid var(--line);
+  }
+
+  .toc__title {
+    margin-bottom: var(--space-3);
+  }
+
+  .toc__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .toc__item a {
+    display: block;
+    padding: 5px var(--space-2);
+    border-radius: 3px;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--fg-3);
+    overflow-wrap: anywhere;
+    transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+  }
+
+  .toc__item a:hover {
+    color: var(--fg);
+    background: var(--surface-2);
+  }
+
+  .toc__item--sub a {
+    padding-left: var(--space-4);
+    font-size: 0.75rem;
+  }
+
+  /* 当前章节：左侧色条 + 提亮。不用位移，避免目录随滚动抖动 */
+  .toc__item a.is-active {
+    color: var(--fg);
+    background: var(--acc-soft);
+    box-shadow: inset 2px 0 0 var(--acc);
+  }
+
+  /* 窄屏没有侧边栏空间时隐藏，由页面容器控制 */
+  @media (max-width: 1080px) {
+    .toc {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // 滚动高亮：跟踪可见标题，按文档顺序取最靠上的那个
+  function initToc() {
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]'));
+    if (links.length === 0) return;
+
+    const byId = new Map<string, HTMLAnchorElement>();
+    for (const a of links) {
+      const id = a.dataset.tocLink;
+      if (id) byId.set(id, a);
+    }
+
+    const targets = Array.from(byId.keys())
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (targets.length === 0) return;
+
+    const visible = new Set<string>();
+    const setActive = (id: string) => {
+      for (const [key, a] of byId) a.classList.toggle('is-active', key === id);
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) visible.add(e.target.id);
+          else visible.delete(e.target.id);
+        }
+        const first = targets.find((t) => visible.has(t.id));
+        if (first) setActive(first.id);
+      },
+      // 顶部让出导航高度，底部收紧，使"当前章节"更贴合阅读位置
+      { rootMargin: '-80px 0px -60% 0px', threshold: 0 },
+    );
+
+    for (const t of targets) observer.observe(t);
+  }
+
+  initToc();
+  document.addEventListener('astro:after-swap', initToc);
+</script>

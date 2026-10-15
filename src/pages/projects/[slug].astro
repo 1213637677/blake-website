@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import EntryMeta from '../../components/EntryMeta.astro';
+import Toc from '../../components/Toc.astro';
 import CodeEnhance from '../../components/CodeEnhance.astro';
 import Cover from '../../components/Cover.astro';
 import Icon from '../../components/Icon.astro';
@@ -20,7 +21,7 @@ export async function getStaticPaths() {
 }
 
 const { project, prev, next } = Astro.props;
-const { Content } = await render(project);
+const { Content, headings } = await render(project);
 const minutes = readingTime(project.body ?? '');
 
 const specs = [
@@ -43,6 +44,9 @@ const specs = [
       <span aria-hidden="true">/</span>
       <span>{project.data.kind === 'work' ? '工作项目' : '个人项目'}</span>
     </nav>
+
+    <div class="project__grid">
+    <div class="project__main">
 
     <h1 class="project__title">{project.data.title}</h1>
     {project.data.summary && <p class="project__summary">{project.data.summary}</p>}
@@ -86,6 +90,13 @@ const specs = [
       draft={project.data.draft}
     />
 
+    </div>
+
+    <aside class="project__aside">
+      <Toc headings={headings} />
+    </aside>
+    </div>
+
     <p class="back">
       <a href={url("/projects")}>
         <Icon name="arrowLeft" size={13} />
@@ -121,6 +132,34 @@ const specs = [
 <style>
   .project {
     padding-block: var(--space-8) var(--space-9);
+  }
+
+  /* 正文 + 目录侧边栏；窄屏收成单列，侧边栏组件内自隐藏 */
+  .project__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 232px;
+    gap: var(--space-8);
+    align-items: start;
+  }
+
+  .project__main {
+    min-width: 0;
+  }
+
+  .project__aside {
+    position: sticky;
+    top: calc(var(--nav-h) + var(--space-5));
+  }
+
+  @media (max-width: 1080px) {
+    .project__grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .project__aside {
+      display: none;
+    }
   }
 
   .crumb {
