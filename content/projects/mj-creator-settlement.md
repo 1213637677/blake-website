@@ -54,8 +54,9 @@ lock(unionID)
 defer unlock
 
 // 拿锁后重新读，等锁期间状态可能已被改
-exe = 重新查询(exe.ID)
-if exe.状态 != 审核中: 返回错误
+exe = reload(exe.ID)
+if exe.status != AUDITING:
+    return error
 ```
 
 第一次读是为了拿到 unionID（锁的粒度是 unionID），第二次读才用于判断。等锁期间状态可能已经被别的请求改了，不重读就是基于过期数据做决策。
@@ -65,8 +66,8 @@ if exe.状态 != 审核中: 返回错误
 限量活动的名额扣减还要靠数据库行锁兜底，条件直接写在 SQL 里：
 
 ```
-UPDATE 活动 SET 参与数 = 参与数 + 1
-WHERE id = ? AND 参与数 < 名额上限
+UPDATE task SET join_count = join_count + 1
+WHERE id = ? AND join_count < count
 -- 影响行数为 0 即名额已满
 ```
 
@@ -121,11 +122,11 @@ WHERE id = ? AND 参与数 < 名额上限
 **消费端的关键判断只有一条：重试解决不了的才确认。**
 
 ```
-解析消息失败      -> 确认  // 格式错了，重试一百次也一样
-远程调用失败      -> 重试  // 说不定下次就好了
-查到视频          -> 确认
-没查到且次数没用完 -> 重试计数 +1，重新入队
-没查到且次数用完   -> 确认，转人工
+unmarshal_failed        -> ACK   // 格式错了，重试一百次也一样
+remote_call_failed      -> RETRY // 说不定下次就好了
+video_found             -> ACK
+not_found && tries_left -> RETRY // tryCount += 1，重新入队
+not_found && no_tries   -> ACK   // 放弃治疗，转人工
 ```
 
 这条判断看着简单，却是整个兜底能不能成立的关键。把可恢复的错误也确认掉，任务就静默丢失了——创作者提交了视频，系统在后台悄悄放弃，没人知道。
@@ -145,7 +146,7 @@ WHERE id = ? AND 参与数 < 名额上限
 **冻结期终点怎么算是个容易踩的坑。** `finish_time` 不是"审核通过时间 + 7 天"，而是**"视频号发布时间 + 7 天"**，而且进入结算时不再修改它：
 
 ```
-finish_time = 视频号发布时间 + 7 天
+finish_time = submit_time + 7d
 // 进入结算时不改写 finish_time，防止执行时间误差导致延迟到下个月结算
 ```
 
@@ -158,10 +159,10 @@ finish_time = 视频号发布时间 + 7 天
 真正复杂的不是主链路，而是各种失败和回滚路径。其中有个设计值得单独说：**退回时不无脑失败，先判断活动过期没有**。
 
 ```
-if 当前时间 < 活动截止时间:
-    状态 = 可重新领取   // 还能再来一次
+if now < task.expire_time:
+    exe.status = APPLIABLE // 还能再来一次
 else:
-    状态 = 已过期       // 这期结束了
+    exe.status = EXPIRED   // 这期结束了
 ```
 
 放弃任务、冻结期复查发现视频被删、后台判定"根本没发到视频号"，走的都是这套判断。
