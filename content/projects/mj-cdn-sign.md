@@ -3,9 +3,7 @@ title: CDN 防盗链设计
 summary: 防盗链要求 URL 有时效性，但云控配置、构建产物、开放平台要求 URL 稳定。用"强制开启集合 + 强制豁免集合 + 客户端版本灰度"三层判断来调和，而不是一刀切。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - CDN
@@ -13,7 +11,6 @@ tags:
   - 秒剪
   - 存储
 featured: false
-links: []
 ---
 
 ## 要解决的问题

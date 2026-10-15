@@ -3,9 +3,7 @@ title: 素材下发缓存
 summary: 读极多写极少的场景下，用进程内缓存加随机抖动过期时间防雪崩，再靠广播与等待队列合并保证运营发布一次不会让几百台机器同时回源数据库。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - Redis
@@ -13,7 +11,6 @@ tags:
   - 秒剪
   - 缓存
 featured: false
-links: []
 ---
 
 ## 要解决的问题

@@ -3,9 +3,7 @@ title: 实时同看
 summary: 房间从创建到销毁的完整生命周期，核心是心跳加延迟消息判定存活、条件更新做状态推进，以及一套地理热力图的离线计算管线。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - Redis
@@ -14,7 +12,6 @@ tags:
   - 秒剪
   - 实时
 featured: false
-links: []
 ---
 
 ## 这个模块做什么

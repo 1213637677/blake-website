@@ -25,10 +25,8 @@ const projects = defineCollection({
   schema: z.object({
     ...base,
     kind: z.enum(['work', 'personal']).default('personal'),
-    role: z.string().default(''),
     stack: z.array(z.string()).default([]),
     period: z.string().default(''),
-    status: z.enum(['active', 'shipped', 'paused', 'archived']).default('shipped'),
     links: z
       .array(z.object({ label: z.string(), href: z.string(), kind: z.enum(['demo', 'source', 'post']).default('source') }))
       .default([]),

@@ -4,18 +4,12 @@ import FilterBar from '../../components/FilterBar.astro';
 import Cover from '../../components/Cover.astro';
 import Icon from '../../components/Icon.astro';
 import { getProjects } from '../../lib/entries';
+import { readingTime } from '../../lib/entries';
 import { fmtDate } from '../../lib/format';
 import { url } from '../../lib/url';
 
 const projects = await getProjects();
 const tags = [...new Set(projects.flatMap((p) => p.data.tags))].sort();
-
-const STATUS_LABEL: Record<string, string> = {
-  active: '进行中',
-  shipped: '已完成',
-  paused: '暂停',
-  archived: '归档',
-};
 
 const SEGMENTS = [
   { value: 'all', label: '全部' },
@@ -24,7 +18,11 @@ const SEGMENTS = [
 ];
 
 // 大卡片 / 小卡片交替，打破均匀网格
-const cells = projects.map((p, i) => ({ p, big: i % 3 === 0 }));
+const cells = projects.map((p, i) => ({
+  p,
+  big: i % 3 === 0,
+  minutes: readingTime(p.body ?? ''),
+}));
 ---
 
 <BaseLayout title="项目" description="做过的工作项目与自己发起的项目。">
@@ -48,11 +46,11 @@ const cells = projects.map((p, i) => ({ p, big: i % 3 === 0 }));
       ) : (
     <h2 class="visually-hidden">全部项目</h2>
         <ul class="grid">
-          {cells.map(({ p, big }) => (
+          {cells.map(({ p, big, minutes }) => (
             <li
               class:list={['cell', 'reveal', { 'cell--wide': big }]}
               data-item
-              data-search={`${p.data.title} ${p.data.summary} ${p.data.role} ${p.data.tags.join(' ')} ${p.data.stack.join(' ')}`}
+              data-search={`${p.data.title} ${p.data.summary} ${p.data.tags.join(' ')} ${p.data.stack.join(' ')}`}
               data-tags={p.data.tags.join('|')}
               data-seg={p.data.kind}
             >
@@ -69,7 +67,7 @@ const cells = projects.map((p, i) => ({ p, big: i % 3 === 0 }));
                     <span class:list={['badge', `badge--${p.data.kind}`]}>
                       {p.data.kind === 'work' ? '工作' : '个人'}
                     </span>
-                    <span class="status">{STATUS_LABEL[p.data.status] ?? p.data.status}</span>
+                    <span class="status">{minutes} min</span>
                   </div>
 
                   <h3 class="cell__title">{p.data.title}</h3>

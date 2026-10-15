@@ -3,9 +3,7 @@ title: AIGC 异步任务系统
 summary: 秒级到分钟级的 AI 生成任务，用 Redis 存状态加客户端自持轮询节奏做到服务端完全无状态，配套按模型隔离的队列、消费前幂等检查与只重试可重试错误。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - Redis
@@ -14,7 +12,6 @@ tags:
   - 秒剪
   - AIGC
 featured: true
-links: []
 ---
 
 ## 要解决的问题

@@ -7,6 +7,7 @@ import Cover from '../../components/Cover.astro';
 import Icon from '../../components/Icon.astro';
 import '../../styles/prose.css';
 import { getProjects } from '../../lib/entries';
+import { readingTime } from '../../lib/entries';
 import { fmtDate } from '../../lib/format';
 import { url } from '../../lib/url';
 
@@ -20,25 +21,12 @@ export async function getStaticPaths() {
 
 const { project, prev, next } = Astro.props;
 const { Content } = await render(project);
-
-const STATUS_LABEL: Record<string, string> = {
-  active: '进行中',
-  shipped: '已完成',
-  paused: '暂停',
-  archived: '归档',
-};
-
-const LINK_ICON: Record<string, string> = {
-  demo: 'arrowUpRight',
-  source: 'github',
-  post: 'link',
-};
+const minutes = readingTime(project.body ?? '');
 
 const specs = [
-  project.data.role && { label: '角色', value: project.data.role },
   project.data.period && { label: '时间', value: project.data.period },
-  { label: '状态', value: STATUS_LABEL[project.data.status] ?? project.data.status },
   { label: '类型', value: project.data.kind === 'work' ? '工作项目' : '个人项目' },
+  { label: '阅读', value: `${minutes} 分钟` },
 ].filter(Boolean) as { label: string; value: string }[];
 ---
 
@@ -84,27 +72,6 @@ const specs = [
         </section>
       )
     }
-
-    <section class="block">
-      <p class="block__title eyebrow">链接</p>
-      {
-        project.data.links.length > 0 ? (
-          <ul class="links">
-            {project.data.links.map((l) => (
-              <li>
-                <a class="btn" href={l.href} rel="noopener noreferrer" target="_blank">
-                  <Icon name={LINK_ICON[l.kind] ?? 'link'} size={15} />
-                  {l.label}
-                  <Icon name="arrowUpRight" size={13} />
-                </a>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p class="block__empty">演示与源码链接待补充。在 frontmatter 的 <code>links</code> 里加。</p>
-        )
-      }
-    </section>
 
     <div class="prose project__body">
       <Content />

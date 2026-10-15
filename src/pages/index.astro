@@ -17,7 +17,6 @@ const featured = (
   projects.filter((p) => p.data.featured).length ? projects.filter((p) => p.data.featured) : projects
 ).slice(0, 3);
 
-const activeProject = projects.find((p) => p.data.status === 'active');
 const latestNote = notes[0];
 
 const stats = [
@@ -53,7 +52,7 @@ const stats = [
       <dl class="status">
         {
           [
-            activeProject && { k: '在做', v: activeProject.data.title, href: url(`/projects/${activeProject.id}`) },
+            featured[0] && { k: '在做', v: featured[0].data.title, href: url(`/projects/${featured[0].id}`) },
             latestNote && { k: '最新', v: latestNote.data.title, href: `/notes#${latestNote.id}` },
             site.now && { k: '近况', v: site.now },
             timeline[0] && { k: '更新', v: fmtDate(timeline[0].date) },

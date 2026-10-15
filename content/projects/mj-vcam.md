@@ -3,9 +3,7 @@ title: V 相机拍摄助手
 summary: 拍照后由大模型给出构图建议、生成文案。异步任务用几个 Redis 键加一个内存结构实现，能取消、能模拟流式，代价是任务与节点强绑定。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - Redis
@@ -13,7 +11,6 @@ tags:
   - 秒剪
   - AIGC
 featured: false
-links: []
 ---
 
 ## 这个模块做什么

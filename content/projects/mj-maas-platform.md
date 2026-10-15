@@ -3,9 +3,7 @@ title: MaaS 素材中台
 summary: 素材主数据的持有者与运营后台的写入口，同时把素材能力包装成对外接口。一半面向自有客户端，一半要同步到微信侧。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - MySQL
@@ -14,7 +12,6 @@ tags:
   - 秒剪
   - MaaS
 featured: false
-links: []
 ---
 
 ## 这个模块做什么

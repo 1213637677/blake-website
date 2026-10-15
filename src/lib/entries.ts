@@ -15,7 +15,6 @@ export type Unified = {
   pinned: boolean;
   /** 仅项目有 */
   featured?: boolean;
-  status?: 'active' | 'shipped' | 'paused' | 'archived';
   stack?: string[];
   readingTime?: number;
 };
@@ -92,7 +91,6 @@ function toUnified(
     cover: data.cover as string | undefined,
     pinned: Boolean(data.pinned),
     featured: data.featured as boolean | undefined,
-    status: data.status as Unified['status'],
     stack: data.stack as string[] | undefined,
     readingTime: readingTime(body),
   };

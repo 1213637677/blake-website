@@ -37,21 +37,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .map((s) => s.trim())
       .filter(Boolean);
 
-  const linksRaw = get('links');
-  const links = linksRaw
-    ? linksRaw
-        .split('\n')
-        .map((line) => line.split('|').map((s) => s.trim()))
-        .filter((parts) => parts.length >= 2 && parts[0] && parts[1])
-        .map(([label, href, kind]) => ({
-          label: label ?? '',
-          href: href ?? '',
-          kind: (['demo', 'source', 'post'].includes((kind ?? '').toLowerCase())
-            ? (kind ?? '').toLowerCase()
-            : 'source') as 'demo' | 'source' | 'post',
-        }))
-    : [];
-
   const data: Record<string, unknown> = {
     title,
     summary: get('summary'),
@@ -68,12 +53,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   if (collection === 'projects') {
     data.kind = get('kind') || 'personal';
-    data.status = get('status') || 'shipped';
-    data.role = get('role');
     data.period = get('period');
     data.cover = get('cover');
     data.stack = split(get('stack'));
-    data.links = links;
     data.featured = form.get('featured') === 'on';
   }
 

@@ -66,6 +66,7 @@ const NODE_SIZE: Record<string, string> = {
                   <span class="node__meta">
                     <span class:list={['node__kind', `k-${it.kind}`]}>{kindLabel(it.kind)}</span>
                     <time datetime={it.date.toISOString()}>{fmtDate(it.date)}</time>
+                    {it.readingTime && <span class="node__min">{it.readingTime} min</span>}
                     {it.pinned && <span class="node__pin">置顶</span>}
                   </span>
 
@@ -321,6 +322,10 @@ const NODE_SIZE: Record<string, string> = {
     color: #1a1a18;
     padding: 1px 6px;
     letter-spacing: 0.08em;
+  }
+
+  .node__min {
+    color: var(--fg-3);
   }
 
   .node__title {

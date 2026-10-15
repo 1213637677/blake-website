@@ -36,8 +36,6 @@ const updatedStr =
       ? rawUpdated.slice(0, 10)
       : '';
 
-const links = Array.isArray(data.links) ? (data.links as { label?: string; href?: string; kind?: string }[]) : [];
-const linksText = links.map((l) => `${l.label ?? ''} | ${l.href ?? ''} | ${l.kind ?? 'source'}`).join('\n');
 
 const COLLECTIONS: { value: CollectionName; label: string }[] = [
   { value: 'posts', label: '文章' },
@@ -140,26 +138,11 @@ const COLLECTIONS: { value: CollectionName; label: string }[] = [
                 </select>
               </label>
               <label class="field">
-                <span class="field__label">状态</span>
-                <select class="input" name="status">
-                  <option value="shipped" selected={str('status', 'shipped') === 'shipped'}>已完成</option>
-                  <option value="active" selected={str('status') === 'active'}>进行中</option>
-                  <option value="paused" selected={str('status') === 'paused'}>暂停</option>
-                  <option value="archived" selected={str('status') === 'archived'}>归档</option>
-                </select>
-              </label>
-            </div>
-
-            <label class="field">
-              <span class="field__label">我的角色</span>
-              <input class="input" name="role" value={str('role')} placeholder="例如：后端负责人" />
-            </label>
-
-            <div class="row2">
-              <label class="field">
                 <span class="field__label">时间段</span>
                 <input class="input" name="period" value={str('period')} placeholder="2024 — 2025" />
               </label>
+            </div>
+
               <label class="field">
                 <span class="field__label">封面图</span>
                 <input class="input" name="cover" value={str('cover')} placeholder="/uploads/xxx.png" />
@@ -169,12 +152,6 @@ const COLLECTIONS: { value: CollectionName; label: string }[] = [
             <label class="field">
               <span class="field__label">技术栈</span>
               <input class="input" name="stack" value={arr('stack').join(', ')} placeholder="用逗号分隔" />
-            </label>
-
-            <label class="field">
-              <span class="field__label">外链</span>
-              <textarea class="input input--area" name="links" rows="3" placeholder={"每行一条：\nDemo | https://... | demo\n源码 | https://... | source"}>{linksText}</textarea>
-              <span class="field__hint">格式：<code>名称 | 网址 | demo|source|post</code></span>
             </label>
 
             <label class="switch">

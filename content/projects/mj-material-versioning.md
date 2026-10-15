@@ -3,9 +3,7 @@ title: 素材版本化与依赖展开
 summary: 运营配置的编辑组件如何做到可版本化、可追溯，并通过依赖图让子素材变更自动传导到父模板，同时保证任何版本客户端都拿得到可用版本。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - MySQL
@@ -14,7 +12,6 @@ tags:
   - 秒剪
   - 素材系统
 featured: true
-links: []
 ---
 
 ## 要解决的问题

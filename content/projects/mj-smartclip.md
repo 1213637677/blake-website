@@ -3,16 +3,13 @@ title: 智能剪辑编排引擎
 summary: 输入素材、模板和一首歌，输出一份卡在音乐节拍上的工程描述。核心是节拍数学与规则编排，AI 只贡献选段且结果必须被服务端校正。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
 tags:
   - 秒剪
   - 智能剪辑
 featured: true
-links: []
 ---
 
 ## 这个模块做什么

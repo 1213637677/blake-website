@@ -24,7 +24,7 @@ export const GET: APIRoute = async () => {
       href: `/projects/${p.id}`,
       date: p.data.date.toISOString(),
       text: strip(p.body ?? '').slice(0, 1500),
-      minutes: undefined,
+      minutes: readingTime(p.body ?? ''),
     })),
     ...notes.map((n) => ({
       kind: 'note' as const,

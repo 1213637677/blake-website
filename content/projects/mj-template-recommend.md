@@ -3,9 +3,7 @@ title: 模板推荐
 summary: 根据用户选的素材推荐合适的模板。从纯规则演进到模型排序，但业务侧保留入口分流、置顶覆盖、结果校验、逐条过滤四道防线，规则版作为退路和对照组长期保留。
 date: 2026-10-14
 kind: work
-role: 后端设计与实现
 period: '2024 — 至今'
-status: active
 stack:
   - Go
   - Redis
@@ -14,7 +12,6 @@ tags:
   - 秒剪
   - 推荐
 featured: true
-links: []
 ---
 
 ## 要解决的问题
