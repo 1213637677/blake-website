@@ -17,10 +17,8 @@ const SEGMENTS = [
   { value: 'personal', label: '个人项目' },
 ];
 
-// 大卡片 / 小卡片交替，打破均匀网格
-const cells = projects.map((p, i) => ({
+const cells = projects.map((p) => ({
   p,
-  big: i % 3 === 0,
   minutes: readingTime(p.body ?? ''),
 }));
 ---
@@ -46,9 +44,9 @@ const cells = projects.map((p, i) => ({
       ) : (
     <h2 class="visually-hidden">全部项目</h2>
         <ul class="grid">
-          {cells.map(({ p, big, minutes }) => (
+          {cells.map(({ p, minutes }) => (
             <li
-              class:list={['cell', 'reveal', { 'cell--wide': big }]}
+              class:list={['cell', 'reveal']}
               data-item
               data-search={`${p.data.title} ${p.data.summary} ${p.data.tags.join(' ')} ${p.data.stack.join(' ')}`}
               data-tags={p.data.tags.join('|')}
@@ -59,7 +57,7 @@ const cells = projects.map((p, i) => ({
                   seed={p.id}
                   label={p.data.title}
                   src={p.data.cover}
-                  ratio={big ? 'wide' : 'square'}
+                  ratio="wide"
                 />
 
                 <div class="cell__body">
@@ -129,11 +127,6 @@ const cells = projects.map((p, i) => ({
 
   .cell {
     min-width: 0;
-  }
-
-  /* 每第 1 张横跨两列，打破均匀 */
-  .cell--wide {
-    grid-column: span 2;
   }
 
   .cell__link {
@@ -207,10 +200,6 @@ const cells = projects.map((p, i) => ({
     overflow-wrap: anywhere;
   }
 
-  .cell--wide .cell__title {
-    font-size: 1.0625rem;
-  }
-
   .cell__summary {
     color: var(--fg-2);
     font-size: 0.9375rem;
@@ -265,19 +254,11 @@ const cells = projects.map((p, i) => ({
     .grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
-    .cell--wide {
-      grid-column: span 2;
-    }
   }
 
   @media (max-width: 640px) {
     .grid {
       grid-template-columns: minmax(0, 1fr);
-    }
-
-    .cell--wide {
-      grid-column: span 1;
     }
 
     .cell__go {
